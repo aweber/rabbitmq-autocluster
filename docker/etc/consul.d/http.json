@@ -1,0 +1,8 @@
+{
+    "check": {
+        "name": "RabbitMQ HTTP",
+        "notes": "Use curl to check the web service every 10 seconds",
+        "script": "curl localhost:15672 >/dev/null 2>&1",
+        "interval": "10s"
+    }
+}

@@ -1,0 +1,9 @@
+{application, rabbitmq_autocluster_consul,
+ [
+  {description, "Auto-clustering plugin using Consul"},
+  {vsn, "0.1.0"},
+  {modules, []},
+  {registered, []},
+  {applications, [kernel, stdlib, rabbit, inets]}
+ ]
+}.
