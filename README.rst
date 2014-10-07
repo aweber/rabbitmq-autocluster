@@ -73,7 +73,7 @@ as a server. Note that there is nothing docker specific about the project and it
 can run anywhere you use Consul.
 
 Once you have started the VM with ``vagrant up`` you should be able to connect to
-the Consul UI at `http://192.168.150.10:8500/ui/`_.
+the Consul UI at http://192.168.150.10:8500/ui/.
 
 The container is Ubuntu based and includes latest stable Erlang and RabbitMQ
 release installed. Pre-built containers for testing are available on Docker Hub under
@@ -87,7 +87,7 @@ You can run the first container to get access to the management UI with:
 
     docker run -d -p 15672:15672 --dns 127.0.0.1 --dns-search node.rmq.consul aweber/rabbitmq-autocluster-consul
 
-The RabbitMQ management UI will the be available at `http://192.168.150.10:15672/`_ and
+The RabbitMQ management UI will the be available at http://192.168.150.10:15672/ and
 you an login with the username/password combo of ``guest``/``guest``.
 
 You can run subsequent containers with:
