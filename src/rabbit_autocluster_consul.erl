@@ -19,7 +19,6 @@
 -define(MIME_TYPE, "application/json").
 
 -define(CONSUL_SERVICE,  "rabbitmq:autocluster").
--define(CONSUL_REGISTER_BODY, "{\"name\":\"" ++ ?CONSUL_SERVICE ++ "\"}").
 
 %% @public
 %% @spec init() -> ok
@@ -46,7 +45,6 @@ init() ->
       application:stop(rabbit),
       mnesia:stop(),
       rabbit_mnesia:reset(),
-      io:format("Discovery nodes: ~p~n", [DiscoveryNode]),
       rabbit_mnesia:join_cluster(DiscoveryNode, disc),
       mnesia:start(),
       rabbit:start(),
@@ -70,64 +68,6 @@ shutdown() ->
 
 
 %% @private
-%% @spec extract_nodes() -> list()
-%% @doc Fetch the list of cluster nodes from Consul, returning them as a list of
-%%      atoms.
-%% @end
-%%
-cluster_nodes() ->
-  case httpc:request(build_url("catalog/service", ?CONSUL_SERVICE)) of
-    {ok, {{_, 200, _}, _, Body}} ->
-      {ok, Raw} = rabbit_misc:json_decode(Body),
-      extract_nodes(Raw);
-    Other ->
-      io:format("get_nodes response: ~p~n", [Other]),
-      []
-  end.
-
-
-%% @private
-%% @spec extract_nodes(Data) -> list()
-%% @doc Take the list fo data as returned from the call to Consul and return it
-%%      as a properly formatted list of rabbitmq cluster identifier atoms.
-%% @end
-%%
-extract_nodes(Data) ->
-  Values = [proplists:lookup(<<"Node">>, N) || N <- [N || {struct, N} <- Data]],
-  Addresses = [binary_to_list(Addr) || {_, Addr} <- Values],
-  filter_self([list_to_atom("rabbit@" ++ Addr) || Addr <- Addresses]).
-
-
-%% @private
-%% @spec register() -> mixed
-%% @doc Register with Consul as providing rabbitmq:autocluster service
-%% @end
-%%
-register() ->
-  case httpc:request(post, {build_url("agent/service/register"),
-                            [], ?MIME_TYPE,
-                            ?CONSUL_REGISTER_BODY},
-                     [], []) of
-    {ok, {{_, 200, _}, _, _}} -> ok;
-    {ok, {{_, StatusCode, _}, _, Body}} -> [StatusCode, Body];
-    Other -> Other
-  end.
-
-%% @private
-%% @spec register() -> mixed
-%% @doc Deregister the rabbitmq:autocluster service for this node from Consul
-%% @end
-%%
-deregister() ->
-  io:format("~nUnregistering node in Consul~n"),
-  case httpc:request(build_url("agent/service/deregister", ?CONSUL_SERVICE)) of
-      {ok, {{_, 200, _}, _, _}} -> ok;
-      {ok, {{_, StatusCode, _}, _, Body}} -> [StatusCode, Body];
-      Other -> Other
-  end.
-
-
-%% @private
 %% @spec base_uri() -> list()
 %% @where
 %%       Endpoint = list()
@@ -136,8 +76,8 @@ deregister() ->
 %% @end
 %%
 base_uri() ->
-   Host = get_env("client_host", ?DEFAULT_HOST),
-   Port = integer_to_list(get_env("client_port", ?DEFAULT_PORT)),
+   Host = get_env(client_host, ?DEFAULT_HOST),
+   Port = integer_to_list(get_env(client_port, ?DEFAULT_PORT)),
    "http://" ++ Host ++ ":" ++ Port ++ "/v1/".
 
 
@@ -165,18 +105,75 @@ build_url(Endpoint, Value) ->
 
 
 %% @private
-%% @spec cluster_name() -> Value
-%% @where
-%%       Value        = mixed
+%% @spec cluster_name() -> mixed
 %% @doc Return the configured cluster name if it is specified, otherwise return
 %%      the atom ``not_set``.
 %% @end
 %%
 cluster_name() ->
-  case application:get_env(rabbitmq_autocluster_consul, "cluster_name") of
+  case application:get_env(rabbitmq_autocluster_consul, cluster_name) of
     undefined -> not_set;
-    Name -> Name
+    {ok, Name} ->
+      io:format("Cluster name: ~p~n", [Name]),
+      binary_to_list(Name)
   end.
+
+
+%% @private
+%% @spec extract_nodes() -> list()
+%% @doc Fetch the list of cluster nodes from Consul, returning them as a list of
+%%      atoms.
+%% @end
+%%
+cluster_nodes() ->
+  io:format("Query URL: ~p~n", [cluster_query_url()]),
+  case httpc:request(cluster_query_url()) of
+    {ok, {{_, 200, _}, _, Body}} ->
+      {ok, Raw} = rabbit_misc:json_decode(Body),
+      extract_nodes(Raw);
+    Other ->
+      io:format("get_nodes response: ~p~n", [Other]),
+      []
+  end.
+
+
+%% @private
+%% @spec cluster_query_url() -> list()
+%% @doc Return the appropriate URL for querying the service depending on if a
+%%      cluster name is set or not.
+%% @end
+%%
+cluster_query_url() ->
+  case cluster_name() of
+    not_set -> build_url("catalog/service", ?CONSUL_SERVICE);
+    Tag -> build_url("catalog/service", ?CONSUL_SERVICE ++ "?tag=" ++ Tag)
+  end.
+
+
+%% @private
+%% @spec register() -> mixed
+%% @doc Deregister the rabbitmq:autocluster service for this node from Consul
+%% @end
+%%
+deregister() ->
+  io:format("~nUnregistering node in Consul~n"),
+  case httpc:request(build_url("agent/service/deregister", ?CONSUL_SERVICE)) of
+      {ok, {{_, 200, _}, _, _}} -> ok;
+      {ok, {{_, StatusCode, _}, _, Body}} -> [StatusCode, Body];
+      Other -> Other
+  end.
+
+
+%% @private
+%% @spec extract_nodes(Data) -> list()
+%% @doc Take the list fo data as returned from the call to Consul and return it
+%%      as a properly formatted list of rabbitmq cluster identifier atoms.
+%% @end
+%%
+extract_nodes(Data) ->
+  Values = [proplists:lookup(<<"Node">>, N) || N <- [N || {struct, N} <- Data]],
+  Addresses = [binary_to_list(Addr) || {_, Addr} <- Values],
+  filter_self([list_to_atom("rabbit@" ++ Addr) || Addr <- Addresses]).
 
 
 %% @private
@@ -207,4 +204,32 @@ get_env(EnvVar, DefaultValue) ->
       DefaultValue;
     {ok, V} ->
       V
+  end.
+
+%% @private
+%% @spec registration_body() -> list()
+%% @doc Return the appropriate registration body based upon if the cluster
+%%      name is set or not.
+%% @end
+%%
+registration_body() ->
+  case cluster_name() of
+    not_set -> "{\"Name\":\"" ++ ?CONSUL_SERVICE ++ "\"}";
+    Name -> "{\"Name\":\"" ++ ?CONSUL_SERVICE ++ "\", \"Tags\": [\"" ++ Name ++ "\"]}"
+  end.
+
+
+%% @private
+%% @spec register() -> mixed
+%% @doc Register with Consul as providing rabbitmq:autocluster service
+%% @end
+%%
+register() ->
+  io:format("Query Body: ~p~n", [registration_body()]),
+  case httpc:request(post, {build_url("agent/service/register"),
+                            [], ?MIME_TYPE, registration_body()},
+                     [], []) of
+    {ok, {{_, 200, _}, _, _}} -> ok;
+    {ok, {{_, StatusCode, _}, _, Body}} -> [StatusCode, Body];
+    Other -> Other
   end.
