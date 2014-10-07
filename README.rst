@@ -10,7 +10,7 @@ the RabbitMQ version you are running:
 +---------+------------+----------+-----------------------+----------------------------------+
 | Version |  Released  | RabbitMQ | Short URL             | MD5 Hash                         |
 +=========+============+==========+=======================+==================================+
-|  0.1.0  | 2014-10-06 | v 3.3.x  |                       |                                  |
+|  0.1.0  | 2014-10-06 | v 3.3.x  | http://bit.ly/Zantlu  | fb7b5126ed0f07ca1d4c0128d2a92b04 |
 +---------+------------+----------+-----------------------+----------------------------------+
 
 Files are served via GitHub's RAW download functionality.
@@ -88,7 +88,7 @@ You can run the first container to get access to the management UI with:
     docker run -d -p 15672:15672 --dns 127.0.0.1 --dns-search node.rmq.consul aweber/rabbitmq-autocluster-consul
 
 The RabbitMQ management UI will the be available at http://192.168.150.10:15672/ and
-you an login with the username/password combo of ``guest``/``guest``.
+you can login with the username/password combo of ``guest``/``guest``.
 
 You can run subsequent containers with:
 
