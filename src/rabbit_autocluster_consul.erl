@@ -60,9 +60,9 @@ shutdown() ->
   io:format("~n              Consul Cluster Deregistering: "),
   case deregister() of
     ok ->
-      io:format("Node registered~n");
+      io:format("Node deregistered~n");
     Other ->
-      io:format("Error registering: ~p~n", [Other])
+      io:format("Error deregistering: ~p~n", [Other])
   end,
   ok.
 
