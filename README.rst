@@ -1,6 +1,6 @@
 rabbitmq-autocluster-consul
 ===========================
-A *experimental* RabbitMQ plugin that clusters nodes automatically using Consul.
+An *experimental* RabbitMQ plugin that clusters nodes automatically using Consul.
 
 Download
 --------
