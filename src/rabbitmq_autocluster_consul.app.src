@@ -2,6 +2,9 @@
  [
   {description, "Auto-clustering plugin using Consul"},
   {vsn, "0.1.0"},
+  {env, [{client_host, "localhost"},
+         {client_port, 8500},
+         {cluster_name, undefined}]},
   {modules, []},
   {registered, []},
   {applications, [kernel, stdlib, rabbit, inets]}
