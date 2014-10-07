@@ -44,9 +44,9 @@ default values:
 
     [{rabbitmq_autocluster_consul,
       [
-        {client_host: "localhost"},
-        {client_port: 8500},
-        {cluster_name: <<"test">>}
+        {client_host, "localhost"},
+        {client_port, 8500},
+        {cluster_name, <<"test">>}
       ]}
     ].
 
@@ -72,38 +72,20 @@ machine, Consul will be downloaded and setup, running in the base operating syst
 as a server. Note that there is nothing docker specific about the project and it
 can run anywhere you use Consul.
 
-For creation of the docker image, you should first compile the plugin and copy
-it to the project docker directory:
-
-.. code-block:: bash
-
-    make
-    cp dist/rabbitmq_autocluster_consul-0.0.0.ez docker
-
-The build artifact will be copied into the Docker image that is created and enabled
-so that it works out of the box.
-
 Once you have started the VM with ``vagrant up`` you should be able to connect to
 the Consul UI at `http://192.168.150.10:8500/ui/`_.
 
-You will need to SSH into the virtual machine and create the docker image for
-running RabbitMQ:
-
-.. code-block:: bash
-
-    docker build -t rabbitmq-dev /home/core/share/rabbitmq-autocluster-consul/docker/
-
 The container is Ubuntu based and includes latest stable Erlang and RabbitMQ
-release installed. Each container has ssh running so you can easily get into
-the container and muck with RabbitMQ at the OS level. The ``rabbitmq-public-umbrella``
-directory is available under ``/opt/source`` in the container.
+release installed. Pre-built containers for testing are available on Docker Hub under
+the ``aweber/rabbitmq-autocluster-consul`` tag.
 
+Starting the Testing Environment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 You can run the first container to get access to the management UI with:
 
 .. code-block:: bash
 
-    docker run -d -p 15672:15672 --dns 127.0.0.1 --dns-search node.rmq.consul \
-     -v /home/core/share:/opt/rabbitmq-public-umbrella rabbitmq-dev
+    docker run -d -p 15672:15672 --dns 127.0.0.1 --dns-search node.rmq.consul aweber/rabbitmq-autocluster-consul
 
 The RabbitMQ management UI will the be available at `http://192.168.150.10:15672/`_ and
 you an login with the username/password combo of ``guest``/``guest``.
@@ -112,8 +94,42 @@ You can run subsequent containers with:
 
 .. code-block:: bash
 
+    docker run -d --dns 127.0.0.1 --dns-search node.rmq.consul aweber/rabbitmq-autocluster-consul
+
+Starting the Development Environment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+For creation of the docker image, you should first compile the plugin from the project directory
+and copy the plugin's ez file from ``dist`` to the project docker directory:
+
+.. code-block:: bash
+
+    make
+    cp dist/rabbitmq_autocluster_consul-0.0.0.ez docker
+
+The build artifact will be copied into the Docker image that is created and enabled
+so that it works out of the box. Once copied, build the local image:
+
+.. code-block:: bash
+
+    docker build -t rabbitmq-autocluster-consul /home/core/share/rabbitmq-autocluster-consul/docker/
+
+Use the following docker command to start the first container:
+
+.. code-block:: bash
+
+    docker run -d -p 15672:15672 --dns 127.0.0.1 --dns-search node.rmq.consul \
+      -v /home/core/share:/opt/rabbitmq-public-umbrella rabbitmq-autocluster-consul
+
+And the following command for all subsequent containers:
+
+.. code-block:: bash
+
     docker run -d --dns 127.0.0.1 --dns-search node.rmq.consul \
-      -v /home/core/share:/opt/rabbitmq-public-umbrella rabbitmq-dev
+      -v /home/core/share:/opt/rabbitmq-public-umbrella rabbitmq-autocluster-consul
+
+Each container has ssh running so you can easily get into the container and muck
+with RabbitMQ at the OS level. The ``rabbitmq-public-umbrella`` directory is
+available under ``/opt/source`` in the container.
 
 Development Notes
 ^^^^^^^^^^^^^^^^^
