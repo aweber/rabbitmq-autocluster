@@ -56,10 +56,10 @@ Steps to custom build a version of the rabbitmq-autocluster-consul plugin:
 
 .. code-block:: bash
 
-    hg clone http://hg.rabbitmq.com/rabbitmq-public-umbrella
+    git clone https://github.com/rabbitmq/rabbitmq-public-umbrella.git
     cd rabbitmq-public-umbrella
     make co
-    make BRANCH=rabbitmq_v3_3_5 up_c
+    make BRANCH=rabbitmq_v3_5_0 up_c
     git clone https://github.com/aweber/rabbitmq-autocluster-consul.git
     cd rabbitmq-autocluster-consul
     make
