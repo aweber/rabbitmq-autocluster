@@ -4,8 +4,9 @@ An *experimental* RabbitMQ plugin that clusters nodes automatically using Consul
 
 Download
 --------
-To download rabbitmq-autocluster-consul, select the appropriate file that matches
-the RabbitMQ version you are running:
+Downloads of rabbitmq-autocluster-consul can be found on the
+`GitHub Releases <https://github.com/aweber/rabbitmq-autocluster-consul/releases>`_page.
+Check for version compatibility in the release notes.
 
 Installation
 ------------
