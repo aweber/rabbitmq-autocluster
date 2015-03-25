@@ -7,14 +7,6 @@ Download
 To download rabbitmq-autocluster-consul, select the appropriate file that matches
 the RabbitMQ version you are running:
 
-+---------+------------+----------+-----------------------+----------------------------------+
-| Version |  Released  | RabbitMQ | Short URL             | MD5 Hash                         |
-+=========+============+==========+=======================+==================================+
-|  0.1.0  | 2014-10-06 | v 3.3.x  | http://bit.ly/Zantlu  | fb7b5126ed0f07ca1d4c0128d2a92b04 |
-+---------+------------+----------+-----------------------+----------------------------------+
-
-Files are served via GitHub's RAW download functionality.
-
 Installation
 ------------
 Place the  RabbitMQ plugins directory. Once
@@ -127,17 +119,13 @@ And the following command for all subsequent containers:
     docker run -d --dns 127.0.0.1 --dns-search node.rmq.consul \
       -v /home/core/share:/opt/rabbitmq-public-umbrella rabbitmq-autocluster-consul
 
-Each container has ssh running so you can easily get into the container and muck
-with RabbitMQ at the OS level. The ``rabbitmq-public-umbrella`` directory is
-available under ``/opt/source`` in the container.
+The ``rabbitmq-public-umbrella`` directory is available under ``/opt/source`` in the container.
 
 Development Notes
 ^^^^^^^^^^^^^^^^^
-- You can get a list of IP addresses for nodes with the ``containers`` script in
-  ``/home/core/bin/``.
-- If you intend to do development, once you get your first container up and running
-  you should ssh into it and stop RabbitMQ with ``supervisorctl stop rabbitmq``.
-  Then you'll want to run RabbitMQ out of the
+- If you intend to do development against the containerized cluster, once you get your
+  first container up and running you should use ``docker exec`` to connect into it and stop
+  RabbitMQ with ``supervisorctl stop rabbitmq``. Then you'll want to run RabbitMQ out of the
   ``/opt/source/rabbitmq-public-umbrella/rabbitmq-server`` directory by running
   ``make run``. Then you can do the same in each container you want to work with.
 - When you compile the source in the ``rabbitmq-autocluster-consul`` directory
