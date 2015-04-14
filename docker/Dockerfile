@@ -60,7 +60,7 @@ ADD etc/supervisor.d/rabbitmq.conf /etc/supervisor.d/
 ADD etc/rabbitmq/rabbitmq.config /etc/rabbitmq/
 ADD var/lib/rabbitmq/.erlang.cookie /var/lib/rabbitmq/
 ADD var/lib/rabbitmq/.erlang.cookie /root/
-ADD rabbitmq_autocluster_consul-0.0.0.ez /usr/lib/rabbitmq/lib/rabbitmq_server-3.5.0/plugins/
+ADD rabbitmq_autocluster_consul-0.1.0.ez /usr/lib/rabbitmq/lib/rabbitmq_server-3.5.1/plugins/
 RUN \
   chown rabbitmq:rabbitmq /var/lib/rabbitmq/.erlang.cookie && \
   chmod 0600 /var/lib/rabbitmq/.erlang.cookie && \
