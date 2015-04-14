@@ -1,11 +1,12 @@
 %%==============================================================================
 %% @author Gavin M. Roy <gavinr@aweber.com>
-%% @copyright 2014 AWeber Communications
+%% @copyright 2014-2015 AWeber Communications
 %% @end
 %%==============================================================================
 -module(rabbit_autocluster_consul).
 
--export([init/0, shutdown/0]).
+-export([init/0,
+         shutdown/0]).
 
 -rabbit_boot_step({?MODULE,
                    [{description, <<"Automated cluster configuration via Consul">>},
@@ -13,7 +14,7 @@
                     {cleanup,     {rabbit_autocluster_consul, shutdown, []}},
                     {enables,     pre_boot}]}).
 
--define(DEFAULT_HOST, "localhost").
+-define(DEFAULT_HOST, "127.0.0.1").
 -define(DEFAULT_PORT, 8500).
 
 -define(MIME_TYPE, "application/json").
@@ -36,20 +37,12 @@ init() ->
     Other ->
       io:format("Error registering: ~p~n", [Other])
   end,
-  case cluster_nodes() of
-    [] ->
-      io:format("              First cluster node, no action.~n~n"),
-      ok;
-    [DiscoveryNode|_] ->
-      io:format("              Joining existing cluster.~n~n"),
-      application:stop(rabbit),
-      mnesia:stop(),
-      rabbit_mnesia:reset(),
-      rabbit_mnesia:join_cluster(DiscoveryNode, disc),
-      mnesia:start(),
-      rabbit:start(),
-      ok
+  Nodes = cluster_nodes(),
+  case lists:member(node(), Nodes) of
+    true -> ok;
+    false -> join_cluster(Nodes)
   end.
+
 
 %% @public
 %% @spec shutdown() -> ok
@@ -206,6 +199,25 @@ get_env(EnvVar, DefaultValue) ->
       V
   end.
 
+
+
+%% @private
+%% @spec join_cluster(term()) -> ok
+%% @doc Have the current node join a cluster using the specified discovery node
+%% @end
+%%
+join_cluster([]) -> ok;
+join_cluster(Nodes) ->
+  io:format("              Joining existing cluster.~n~n"),
+  application:stop(rabbit),
+  mnesia:stop(),
+  rabbit_mnesia:reset(),
+  rabbit_mnesia:join_cluster(lists:nth(1, Nodes), disc),
+  mnesia:start(),
+  rabbit:start(),
+  ok.
+
+
 %% @private
 %% @spec registration_body() -> list()
 %% @doc Return the appropriate registration body based upon if the cluster
@@ -225,7 +237,6 @@ registration_body() ->
 %% @end
 %%
 register() ->
-  io:format("Query Body: ~p~n", [registration_body()]),
   case httpc:request(post, {build_url("agent/service/register"),
                             [], ?MIME_TYPE, registration_body()},
                      [], []) of
