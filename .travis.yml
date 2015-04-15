@@ -1,0 +1,31 @@
+language: erlang
+otp_release:
+  - 17.4
+env:
+  - BUILD_DIR=${HOME}/rabbitmq-public-umbrella CONSUL_VERSION=0.5.0 RABBIT_TAG=v3_5_1
+before_install:
+  - ${TRAVIS_BUILD_DIR}/travis-umbrella-setup.sh
+install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq -y xsltproc
+  - ${TRAVIS_BUILD_DIR}/travis-install-consul.sh
+script: cd ${BUILD_DIR}/rabbitmq-autocluster-consul && make test
+after_script:
+  - rm -rf ${BUILD_DIR}/rabbitmq-autocluster-consul
+before_deploy:
+  - cd ${BUILD_DIR}/rabbitmq-autocluster-consul
+  - VERSION=$TRAVIS_TAG make
+deploy:
+  provider: releases
+  api_key:
+    secure: O24Nny5B1Xzs/tMW9qQrwIhvdaJ7gRc5moESXufCry7nlwunYSjCF/ukleZbL/ZjW4JwNHeUGCNvd0qX/fTx2IMzEkIBnxmYkWGfRNMeTZ9hKvmJiwML15BHCVPDxmw46ZMXPBKdDR46aXNJExuJ0QHUmT4FYvKUZdlHmk8rzvw=
+  file: ${BUILD_DIR}/rabbitmq-autocluster-consul/dist/rabbitmq_autocluster_consul-${TRAVIS_TAG}.ez
+  on:
+    tags: true
+    repo: aweber/rabbitmq-autocluster-consul
+before_cache:
+  - cd ${BUILD_DIR}
+  - make clean
+cache:
+  directories:
+    - ${HOME}/rabbitmq-public-umbrella

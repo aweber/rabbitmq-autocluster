@@ -1,0 +1,7 @@
+{
+  "acl_datacenter": "test",
+  "bootstrap": true,
+  "data_dir": "/tmp/consul",
+  "datacenter": "test",
+  "server": true
+}
