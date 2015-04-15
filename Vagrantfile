@@ -31,10 +31,6 @@ Vagrant.configure("2") do |config|
   # Source folder for testing
   config.vm.synced_folder "../", "/home/core/share", id: "core", :nfs => true, :mount_options => ['nolock,vers=3,udp']
 
-  config.vm.network "forwarded_port", guest: 2375, host: 2375
-  config.vm.network "forwarded_port", guest: 5672, host: 5672
-  config.vm.network "forwarded_port", guest: 15672, host: 15672
-
   # CoreOS startup
   config.vm.provision :file,
     :source => "#{CLOUD_CONFIG_PATH}",
