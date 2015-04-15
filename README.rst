@@ -6,7 +6,7 @@ An *experimental* RabbitMQ plugin that clusters nodes automatically using Consul
     :target: https://travis-ci.org/aweber/rabbitmq-autocluster-consul
 .. image:: https://img.shields.io/github/release/aweber/rabbitmq-autocluster-consul.svg
     :target: https://github.com/aweber/rabbitmq-autocluster-consul
-    
+
 Download
 --------
 Downloads of rabbitmq-autocluster-consul can be found on the
@@ -45,7 +45,8 @@ default values:
     [{rabbitmq_autocluster_consul,
       [
         {consul_host, "localhost"},
-        {cconsul_port, 8500},
+        {consul_port, 8500},
+        {consul_acl, "example-acl-token"},
         {cluster_name, "test"}
       ]}
     ].
