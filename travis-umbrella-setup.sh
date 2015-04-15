@@ -10,4 +10,5 @@ if [ ! -d $BUILD_DIR ]; then
 fi
 cd $BUILD_DIR
 make BRANCH=rabbitmq_${RABBIT_TAG} up_c
+rm -rf ${BUILD_DIR}/rabbitmq-autocluster-consul
 cp -r ${TRAVIS_BUILD_DIR} ${BUILD_DIR}/
