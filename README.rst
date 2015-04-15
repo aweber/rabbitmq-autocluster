@@ -2,6 +2,11 @@ rabbitmq-autocluster-consul
 ===========================
 An *experimental* RabbitMQ plugin that clusters nodes automatically using Consul.
 
+.. image:: https://img.shields.io/travis/aweber/rabbitmq-autocluster-consul.svg
+    :target: https://travis-ci.org/aweber/rabbitmq-autocluster-consul
+.. image:: https://img.shields.io/github/release/aweber/rabbitmq-autocluster-consul.svg
+    :target: https://github.com/aweber/rabbitmq-autocluster-consul
+    
 Download
 --------
 Downloads of rabbitmq-autocluster-consul can be found on the
