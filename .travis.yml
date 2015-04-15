@@ -23,10 +23,8 @@ deploy:
   on:
     tags: true
     repo: aweber/rabbitmq-autocluster-consul
-before_cache:
-  - cd $BUILD_DIR
-  - make clean
 cache:
+  apt: true
   directories:
     - $HOME/consul
     - $BUILD_DIR
