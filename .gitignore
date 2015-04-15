@@ -12,3 +12,4 @@ rel/example_project
 .rebar
 docker/rabbitmq_autocluster*ez
 .vagrant
+.idea

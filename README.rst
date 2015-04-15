@@ -23,11 +23,13 @@ default values:
 +--------------+--------------------------------------+-----------+---------------+
 | Setting      | Description                          | Data Type | Default Value |
 +==============+======================================+===========+===============+
-| client_host  | The Consul client host to use        | list      | ``localhost`` |
+| consul_host  | The Consul client host to use        | list      | ``localhost`` |
 +--------------+--------------------------------------+-----------+---------------+
-| client_port  | The port to connect on               | integer   | ``8500``      |
+| consul_port  | The port to connect on               | integer   | ``8500``      |
 +--------------+--------------------------------------+-----------+---------------+
-| cluster_name | The name of the RabbitMQ cluster to  | binary    | Unset         |
+| consul_acl   | The Consul ACL to use for requests   | list      | Unset         |
++--------------+--------------------------------------+-----------+---------------+
+| cluster_name | The name of the RabbitMQ cluster to  | list      | Unset         |
 |              | restrict membership to               |           |               |
 +--------------+--------------------------------------+-----------+---------------+
 
@@ -37,9 +39,9 @@ default values:
 
     [{rabbitmq_autocluster_consul,
       [
-        {client_host, "localhost"},
-        {client_port, 8500},
-        {cluster_name, <<"test">>}
+        {consul_host, "localhost"},
+        {cconsul_port, 8500},
+        {cluster_name, "test"}
       ]}
     ].
 
@@ -52,7 +54,7 @@ Steps to custom build a version of the rabbitmq-autocluster-consul plugin:
     git clone https://github.com/rabbitmq/rabbitmq-public-umbrella.git
     cd rabbitmq-public-umbrella
     make co
-    make BRANCH=rabbitmq_v3_5_0 up_c
+    make BRANCH=rabbitmq_v3_5_1 up_c
     git clone https://github.com/aweber/rabbitmq-autocluster-consul.git
     cd rabbitmq-autocluster-consul
     make

@@ -3,23 +3,22 @@
 %% @copyright 2014-2015 AWeber Communications
 %% @end
 %%==============================================================================
--module(rabbit_autocluster_consul).
+-module(autocluster_consul).
 
 -export([init/0,
          shutdown/0]).
 
 -rabbit_boot_step({?MODULE,
                    [{description, <<"Automated cluster configuration via Consul">>},
-                    {mfa,         {rabbit_autocluster_consul, init, []}},
-                    {cleanup,     {rabbit_autocluster_consul, shutdown, []}},
+                    {mfa,         {autocluster_consul, init, []}},
+                    {cleanup,     {autocluster_consul, shutdown, []}},
                     {enables,     pre_boot}]}).
 
 -define(DEFAULT_HOST, "127.0.0.1").
 -define(DEFAULT_PORT, 8500).
+-define(DEFAULT_ACL, undefined).
 
--define(MIME_TYPE, "application/json").
-
--define(CONSUL_SERVICE,  "rabbitmq:autocluster").
+-define(CONSUL_SERVICE,  "rabbitmq.autocluster").
 
 %% @public
 %% @spec init() -> ok
@@ -61,43 +60,6 @@ shutdown() ->
 
 
 %% @private
-%% @spec base_uri() -> list()
-%% @where
-%%       Endpoint = list()
-%% @doc Build and return the base URI as constructed from values in configuration
-%%      or by default values.
-%% @end
-%%
-base_uri() ->
-   Host = get_env(client_host, ?DEFAULT_HOST),
-   Port = integer_to_list(get_env(client_port, ?DEFAULT_PORT)),
-   "http://" ++ Host ++ ":" ++ Port ++ "/v1/".
-
-
-%% @private
-%% @spec build_url(Endpoint) -> list()
-%% @where
-%%       Endpoint = list()
-%% @doc Return the URL for the given Endpoint.
-%% @end
-%%
-build_url(Endpoint) ->
-  base_uri() ++ Endpoint.
-
-
-%% @private
-%% @spec build_url(Endpoint, Value) -> list()
-%% @where
-%%       Endpoint = list()
-%%       Value    = list()
-%% @doc Return the URL for the given Endpoint and Value.
-%% @end
-%%
-build_url(Endpoint, Value) ->
-  base_uri() ++ Endpoint ++ "/" ++ Value.
-
-
-%% @private
 %% @spec cluster_name() -> mixed
 %% @doc Return the configured cluster name if it is specified, otherwise return
 %%      the atom ``not_set``.
@@ -106,9 +68,7 @@ build_url(Endpoint, Value) ->
 cluster_name() ->
   case application:get_env(rabbitmq_autocluster_consul, cluster_name) of
     undefined -> not_set;
-    {ok, Name} ->
-      io:format("Cluster name: ~p~n", [Name]),
-      binary_to_list(Name)
+    {ok, Name} -> lists:flatten(lists:merge(["autocluster:"], [Name]))
   end.
 
 
@@ -119,27 +79,15 @@ cluster_name() ->
 %% @end
 %%
 cluster_nodes() ->
-  io:format("Query URL: ~p~n", [cluster_query_url()]),
-  case httpc:request(cluster_query_url()) of
-    {ok, {{_, 200, _}, _, Body}} ->
-      {ok, Raw} = rabbit_misc:json_decode(Body),
-      extract_nodes(Raw);
-    Other ->
-      io:format("get_nodes response: ~p~n", [Other]),
+  {Path, Args} = case cluster_name() of
+    not_set -> {[catalog, service, ?CONSUL_SERVICE], []};
+    Tag -> {[catalog, service, ?CONSUL_SERVICE], [{tag, Tag}]}
+  end,
+  case autocluster_consul_client:get(Path, Args) of
+    {ok, Nodes} -> extract_nodes(Nodes);
+    {error, Reason} ->
+      error_logger:error_msg("Error fetching nodes from consul: ~p~n", [Reason]),
       []
-  end.
-
-
-%% @private
-%% @spec cluster_query_url() -> list()
-%% @doc Return the appropriate URL for querying the service depending on if a
-%%      cluster name is set or not.
-%% @end
-%%
-cluster_query_url() ->
-  case cluster_name() of
-    not_set -> build_url("catalog/service", ?CONSUL_SERVICE);
-    Tag -> build_url("catalog/service", ?CONSUL_SERVICE ++ "?tag=" ++ Tag)
   end.
 
 
@@ -149,11 +97,11 @@ cluster_query_url() ->
 %% @end
 %%
 deregister() ->
-  io:format("~nUnregistering node in Consul~n"),
-  case httpc:request(build_url("agent/service/deregister", ?CONSUL_SERVICE)) of
-      {ok, {{_, 200, _}, _, _}} -> ok;
-      {ok, {{_, StatusCode, _}, _, Body}} -> [StatusCode, Body];
-      Other -> Other
+  case autocluster_consul_client:get([agent, service, deregister, ?CONSUL_SERVICE], []) of
+    {ok, _} -> ok;
+    {error, Reason} ->
+      error_logger:error_msg("Error fetching deregistering node from consul: ~p~n", [Reason]),
+      []
   end.
 
 
@@ -178,27 +126,6 @@ extract_nodes(Data) ->
 %%
 filter_self(Addresses) ->
   lists:filter(fun(A) -> A =/= node() end, Addresses).
-
-
-%% @private
-%% @spec get_env(EnvVar, DefaultValue) -> Value
-%% @where
-%%       Name         = list()
-%%       DefaultValue = mixed
-%%       Value        = mixed
-%% @doc Return the environment variable defined for rabbitmq_autocluster_consul
-%%      returning the value if the variable is found, otherwise return the
-%%      passed in default
-%% @end
-%%
-get_env(EnvVar, DefaultValue) ->
-  case application:get_env(rabbitmq_autocluster_consul, EnvVar) of
-    undefined ->
-      DefaultValue;
-    {ok, V} ->
-      V
-  end.
-
 
 
 %% @private
@@ -237,10 +164,9 @@ registration_body() ->
 %% @end
 %%
 register() ->
-  case httpc:request(post, {build_url("agent/service/register"),
-                            [], ?MIME_TYPE, registration_body()},
-                     [], []) of
-    {ok, {{_, 200, _}, _, _}} -> ok;
-    {ok, {{_, StatusCode, _}, _, Body}} -> [StatusCode, Body];
-    Other -> Other
+  case autocluster_consul_client:post([agent, service, register], registration_body()) of
+    ok -> ok;
+    {error, Reason} ->
+      error_logger:error_msg("Error fetching deregistering node from consul: ~p~n", [Reason]),
+      {error, Reason}
   end.
