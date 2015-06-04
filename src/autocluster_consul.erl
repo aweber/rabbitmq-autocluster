@@ -14,7 +14,7 @@
                     {cleanup,     {autocluster_consul, shutdown, []}},
                     {enables,     pre_boot}]}).
 
--define(DEFAULT_CONSUL_SERVICE,  "rabbitmq").
+-define(DEFAULT_CONSUL_SERVICE,  "rabbitmq-autocluster").
 
 %% @public
 %% @spec init() -> ok
