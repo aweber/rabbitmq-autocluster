@@ -14,11 +14,7 @@
                     {cleanup,     {autocluster_consul, shutdown, []}},
                     {enables,     pre_boot}]}).
 
--define(DEFAULT_HOST, "127.0.0.1").
--define(DEFAULT_PORT, 8500).
--define(DEFAULT_ACL, undefined).
-
--define(CONSUL_SERVICE,  "rabbitmq.autocluster").
+-define(DEFAULT_CONSUL_SERVICE,  "rabbitmq").
 
 %% @public
 %% @spec init() -> ok
@@ -80,8 +76,8 @@ cluster_name() ->
 %%
 cluster_nodes() ->
   {Path, Args} = case cluster_name() of
-    not_set -> {[catalog, service, ?CONSUL_SERVICE], []};
-    Tag -> {[catalog, service, ?CONSUL_SERVICE], [{tag, Tag}]}
+    not_set -> {[catalog, service, consul_service()], []};
+    Tag -> {[catalog, service, consul_service()], [{tag, Tag}]}
   end,
   case autocluster_consul_client:get(Path, Args) of
     {ok, Nodes} -> extract_nodes(Nodes);
@@ -93,11 +89,11 @@ cluster_nodes() ->
 
 %% @private
 %% @spec register() -> mixed
-%% @doc Deregister the rabbitmq:autocluster service for this node from Consul
+%% @doc Deregister the rabbitmq service for this node from Consul
 %% @end
 %%
 deregister() ->
-  case autocluster_consul_client:get([agent, service, deregister, ?CONSUL_SERVICE], []) of
+  case autocluster_consul_client:get([agent, service, deregister, consul_service()], []) of
     {ok, _} -> ok;
     {error, Reason} ->
       error_logger:error_msg("Error fetching deregistering node from consul: ~p~n", [Reason]),
@@ -153,14 +149,14 @@ join_cluster(Nodes) ->
 %%
 registration_body() ->
   case cluster_name() of
-    not_set -> "{\"Name\":\"" ++ ?CONSUL_SERVICE ++ "\"}";
-    Name -> "{\"Name\":\"" ++ ?CONSUL_SERVICE ++ "\", \"Tags\": [\"" ++ Name ++ "\"]}"
+    not_set -> "{\"Name\":\"" ++ consul_service() ++ "\"}";
+    Name -> "{\"Name\":\"" ++ consul_service() ++ "\", \"Tags\": [\"" ++ Name ++ "\"]}"
   end.
 
 
 %% @private
 %% @spec register() -> mixed
-%% @doc Register with Consul as providing rabbitmq:autocluster service
+%% @doc Register with Consul as providing rabbitmq service
 %% @end
 %%
 register() ->
@@ -169,4 +165,15 @@ register() ->
     {error, Reason} ->
       error_logger:error_msg("Error fetching deregistering node from consul: ~p~n", [Reason]),
       {error, Reason}
+  end.
+
+%% @private
+%% @spec consul_service() -> list()
+%% @doc Return either the configured consul service name or the default
+%% @end
+%%
+consul_service() ->
+  case application:get_env(rabbitmq_autocluster_consul, consul_service) of
+    {ok, ConsulService} -> ConsulService;
+    undefined -> ?DEFAULT_CONSUL_SERVICE
   end.
