@@ -25,18 +25,20 @@ You can change the settings for the plugin in the ``rabbitmq.config`` file under
 a ``rabbitmq_autocluster_consul`` stanza. The configuration can change any of these
 default values:
 
-+--------------+--------------------------------------+-----------+---------------+
-| Setting      | Description                          | Data Type | Default Value |
-+==============+======================================+===========+===============+
-| consul_host  | The Consul client host to use        | list      | ``localhost`` |
-+--------------+--------------------------------------+-----------+---------------+
-| consul_port  | The port to connect on               | integer   | ``8500``      |
-+--------------+--------------------------------------+-----------+---------------+
-| consul_acl   | The Consul ACL to use for requests   | list      | Unset         |
-+--------------+--------------------------------------+-----------+---------------+
-| cluster_name | The name of the RabbitMQ cluster to  | list      | Unset         |
-|              | restrict membership to               |           |               |
-+--------------+--------------------------------------+-----------+---------------+
++----------------+--------------------------------------+-----------+---------------+
+| Setting        | Description                          | Data Type | Default Value |
++================+======================================+===========+===============+
+| consul_host    | The Consul client host to use        | list      | ``localhost`` |
++----------------+--------------------------------------+-----------+---------------+
+| consul_port    | The port to connect on               | integer   | ``8500``      |
++----------------+--------------------------------------+-----------+---------------+
+| consul_acl     | The Consul ACL to use for requests   | list      | Unset         |
++----------------+--------------------------------------+-----------+---------------+
+| consul_service | The Consul service name to register  | list      | ``rabbitmq``  |
++----------------+--------------------------------------+-----------+---------------+
+| cluster_name   | The name of the RabbitMQ cluster to  | list      | Unset         |
+|                | restrict membership to               |           |               |
++----------------+--------------------------------------+-----------+---------------+
 
 *Exaple rabbitmq.config*
 
@@ -47,6 +49,7 @@ default values:
         {consul_host, "localhost"},
         {consul_port, 8500},
         {consul_acl, "example-acl-token"},
+        {consul_service, "rabbitmq-test"},
         {cluster_name, "test"}
       ]}
     ].
