@@ -21,24 +21,129 @@ extracted, run ``rabbitmq-plugins enable rabbitmq_autocluster_consul``.
 Configuration
 -------------
 
+Configuration for the plugin can be set in two places: operating system environment variables
+or the ``rabbitmq.config`` file.
+
+
 You can change the settings for the plugin in the ``rabbitmq.config`` file under
 a ``rabbitmq_autocluster_consul`` stanza. The configuration can change any of these
 default values:
 
-+----------------+--------------------------------------+-----------+---------------+
-| Setting        | Description                          | Data Type | Default Value |
-+================+======================================+===========+===============+
-| consul_host    | The Consul client host to use        | list      | ``localhost`` |
-+----------------+--------------------------------------+-----------+---------------+
-| consul_port    | The port to connect on               | integer   | ``8500``      |
-+----------------+--------------------------------------+-----------+---------------+
-| consul_acl     | The Consul ACL to use for requests   | list      | Unset         |
-+----------------+--------------------------------------+-----------+---------------+
-| consul_service | The Consul service name to register  | list      | ``rabbitmq``  |
-+----------------+--------------------------------------+-----------+---------------+
-| cluster_name   | The name of the RabbitMQ cluster to  | list      | Unset         |
-|                | restrict membership to               |           |               |
-+----------------+--------------------------------------+-----------+---------------+
+Settings
+````````
+**Consul URL Scheme**
+
+*The URI scheme to use when connecting to Consul*
+
++----------------------+------------------------+
+| Environment Variable | ``CONSUL_SCHEME``      |
++----------------------+------------------------+
+| Setting Key          | ``consul_scheme``      |
++----------------------+------------------------+
+| Data type            | ``list``               |
++----------------------+------------------------+
+| Default Value        | ``http``               |
++----------------------+------------------------+
+
+**Consul Host**
+
+*The hostname to use when connecting to Consul's API*
+
++----------------------+------------------------+
+| Environment Variable | ``CONSUL_HOST``        |
++----------------------+------------------------+
+| Setting Key          | ``consul_host``        |
++----------------------+------------------------+
+| Data type            | ``list``               |
++----------------------+------------------------+
+| Default Value        | ``localhost``          |
++----------------------+------------------------+
+
+**Consul Port**
+
+*The port to use when connecting to Consul's API*
+
++----------------------+------------------------+
+| Environment Variable | ``CONSUL_PORT``        |
++----------------------+------------------------+
+| Setting Key          | ``consul_port``        |
++----------------------+------------------------+
+| Data type            | ``int``                |
++----------------------+------------------------+
+| Default Value        | ``8500``               |
++----------------------+------------------------+
+
+**Consul ACL Token**
+
+*The Consul access token to use when registering the node with Consul (optional)*
+
++----------------------+------------------------+
+| Environment Variable | ``CONSUL_ACL``         |
++----------------------+------------------------+
+| Setting Key          | ``consul_acl``         |
++----------------------+------------------------+
+| Data type            | ``list``               |
++----------------------+------------------------+
+| Default Value        | null                   |
++----------------------+------------------------+
+
+**RabbitMQ Cluster Name**
+
+*A RabbitMQ cluster name to restrict the cluster membership to (optional)*
+
++----------------------+-------------------------+
+| Environment Variable | ``CLUSTER_NAME``        |
++----------------------+-------------------------+
+| Setting Key          | ``cluster_name``        |
++----------------------+-------------------------+
+| Data type            | ``list``                |
++----------------------+-------------------------+
+| Default Value        | null                    |
++----------------------+-------------------------+
+
+**Consul Service Name**
+
+*The name of the service to register with Consul for automatic clustering*
+
++----------------------+-------------------------+
+| Environment Variable | ``SERVICE_NAME``        |
++----------------------+-------------------------+
+| Setting Key          | ``consul_service``      |
++----------------------+-------------------------+
+| Data type            | ``list``                |
++----------------------+-------------------------+
+| Default Value        | ``rabbitmq``            |
++----------------------+-------------------------+
+
+**Consul Service Prefix**
+
+*A prefix that is prepending to the service name when registering with Consul
+for automatic clustering (optional)*
+
++----------------------+---------------------------+
+| Environment Variable | ``SERVICE_PREFIX``        |
++----------------------+---------------------------+
+| Setting Key          | ``consul_service_prefix`` |
++----------------------+---------------------------+
+| Data type            | ``list``                  |
++----------------------+---------------------------+
+| Default Value        | null                      |
++----------------------+---------------------------+
+
+**Consul Service Port**
+
+*Used to set a port for the service in Consul, allowing for the automatic clustering
+service registration to double as a general RabbitMQ service registration*
+
++----------------------+-------------------------+
+| Environment Variable | ``SERVICE_PORT``        |
++----------------------+-------------------------+
+| Setting Key          | ``consul_service_port`` |
++----------------------+-------------------------+
+| Data type            | ``list``                |
++----------------------+-------------------------+
+| Default Value        | ``5672``                |
++----------------------+-------------------------+
 
 *Exaple rabbitmq.config*
 
@@ -56,14 +161,14 @@ default values:
 
 Building
 --------
-Steps to custom build a version of the rabbitmq-autocluster-consul plugin:
+Steps to custom build a version of the ``rabbitmq-autocluster-consul`` plugin:
 
 .. code-block:: bash
 
     git clone https://github.com/rabbitmq/rabbitmq-public-umbrella.git
     cd rabbitmq-public-umbrella
     make co
-    make BRANCH=rabbitmq_v3_5_1 up_c
+    make BRANCH=rabbitmq_v3_5_4 up_c
     git clone https://github.com/aweber/rabbitmq-autocluster-consul.git
     cd rabbitmq-autocluster-consul
     make
