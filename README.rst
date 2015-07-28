@@ -20,17 +20,11 @@ extracted, run ``rabbitmq-plugins enable rabbitmq_autocluster_consul``.
 
 Configuration
 -------------
-
 Configuration for the plugin can be set in two places: operating system environment variables
-or the ``rabbitmq.config`` file.
-
-
-You can change the settings for the plugin in the ``rabbitmq.config`` file under
-a ``rabbitmq_autocluster_consul`` stanza. The configuration can change any of these
-default values:
+or the ``rabbitmq.config`` file under the ``rabbitmq_autocluster_consul`` stanza.
 
 Settings
-````````
+^^^^^^^^
 **Consul URL Scheme**
 
 *The URI scheme to use when connecting to Consul*
