@@ -7,9 +7,6 @@
 
 -define(API_VERSION, "v1").
 -define(CONTENT_JSON, "application/json").
--define(SCHEME, "http").
--define(DEFAULT_HOST, "127.0.0.1").
--define(DEFAULT_PORT, "8500").
 
 -export([get/2, post/2]).
 
@@ -18,10 +15,7 @@
          build_path/1,
          build_query/1,
          build_query/2,
-         percent_encode/1,
-         host/0,
-         port/0,
-         acl/0]).
+         percent_encode/1]).
 
 
 %% @public
@@ -55,13 +49,21 @@ post(Path, Body) ->
 %% @end
 %%
 build_url(Path, QArgs) ->
-  case acl() of
+  case autocluster_consul_config:acl() of
     undefined ->
-      lists:flatten(string:join([?SCHEME, "://", host(), ":", port(),
+      lists:flatten(string:join([autocluster_consul_config:scheme(),
+                                 "://",
+                                 autocluster_consul_config:host(),
+                                 ":",
+                                 autocluster_consul_config:port(),
                                  build_full_path(Path, QArgs)], ""));
     ACL ->
       QArgs2 = lists:merge(QArgs, [{acl, ACL}]),
-      lists:flatten(string:join([?SCHEME, "://", host(), ":", port(),
+      lists:flatten(string:join([autocluster_consul_config:scheme(),
+                                 "://",
+                                 autocluster_consul_config:host(),
+                                 ":",
+                                 autocluster_consul_config:port(),
                                  build_full_path(Path, QArgs2)], ""))
   end.
 
@@ -133,39 +135,3 @@ percent_encode(Value) when is_integer(Value) =:= true ->
   integer_to_list(Value);
 percent_encode(Value) when is_list(Value) =:= true ->
   http_uri:encode(Value).
-
-
-%% @private
-%% @spec acl() -> list()
-%% @doc Return either the configured ACL or undefined
-%% @end
-%%
-acl() ->
-  case application:get_env(rabbitmq_autocluster_consul, consul_acl) of
-    {ok, ACL} -> ACL;
-    undefined -> undefined
-  end.
-
-
-%% @private
-%% @spec host() -> list()
-%% @doc Return either the configured hostname or the default hostname
-%% @end
-%%
-host() ->
-  case application:get_env(rabbitmq_autocluster_consul, consul_host) of
-    {ok, Host} -> Host;
-    undefined -> ?DEFAULT_HOST
-  end.
-
-
-%% @private
-%% @spec port() -> list()
-%% @doc Return either the configured port or the default port
-%% @end
-%%
-port() ->
-  case application:get_env(rabbitmq_autocluster_consul, consul_port) of
-    {ok, Port} -> integer_to_list(Port);
-    undefined -> ?DEFAULT_PORT
-  end.

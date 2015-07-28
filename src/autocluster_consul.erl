@@ -1,6 +1,6 @@
 %%==============================================================================
 %% @author Gavin M. Roy <gavinr@aweber.com>
-%% @copyright 2014-2015 AWeber Communications
+%% @copyright 2015 AWeber Communications
 %% @end
 %%==============================================================================
 -module(autocluster_consul).
@@ -56,28 +56,15 @@ shutdown() ->
 
 
 %% @private
-%% @spec cluster_name() -> mixed
-%% @doc Return the configured cluster name if it is specified, otherwise return
-%%      the atom ``not_set``.
-%% @end
-%%
-cluster_name() ->
-  case application:get_env(rabbitmq_autocluster_consul, cluster_name) of
-    undefined -> not_set;
-    {ok, Name} -> lists:flatten(lists:merge(["autocluster:"], [Name]))
-  end.
-
-
-%% @private
 %% @spec extract_nodes() -> list()
 %% @doc Fetch the list of cluster nodes from Consul, returning them as a list of
 %%      atoms.
 %% @end
 %%
 cluster_nodes() ->
-  {Path, Args} = case cluster_name() of
-    not_set -> {[catalog, service, consul_service()], []};
-    Tag -> {[catalog, service, consul_service()], [{tag, Tag}]}
+  {Path, Args} = case autocluster_consul_client:cluster_name() of
+    undefined -> {[catalog, service, autocluster_consul_client:service()], []};
+    Name -> {[catalog, service, autocluster_consul_client:service()], [{tag, Name}]}
   end,
   case autocluster_consul_client:get(Path, Args) of
     {ok, Nodes} -> extract_nodes(Nodes);
@@ -86,14 +73,13 @@ cluster_nodes() ->
       []
   end.
 
-
 %% @private
 %% @spec register() -> mixed
 %% @doc Deregister the rabbitmq service for this node from Consul
 %% @end
 %%
 deregister() ->
-  case autocluster_consul_client:get([agent, service, deregister, consul_service()], []) of
+  case autocluster_consul_client:get([agent, service, deregister, autocluster_consul_client:service()], []) of
     {ok, _} -> ok;
     {error, Reason} ->
       error_logger:error_msg("Error fetching deregistering node from consul: ~p~n", [Reason]),
@@ -143,15 +129,40 @@ join_cluster(Nodes) ->
 
 %% @private
 %% @spec registration_body() -> list()
-%% @doc Return the appropriate registration body based upon if the cluster
-%%      name is set or not.
+%% @doc Return the appropriate registration body.
 %% @end
 %%
 registration_body() ->
-  case cluster_name() of
-    not_set -> "{\"Name\":\"" ++ consul_service() ++ "\"}";
-    Name -> "{\"Name\":\"" ++ consul_service() ++ "\", \"Tags\": [\"" ++ Name ++ "\"]}"
+  {Service, Name, Port} = {autocluster_consul_config:service(),
+                           autocluster_consul_config:cluster_name(),
+                           autocluster_consul_config:service_port()},
+  Payload = build_registration_body(Service, Name, Port),
+  case rabbit_misc:json_encode(Payload) of
+    {ok, Body} -> Body;
+    {error, Error} ->
+      error_logger:error_msg("Could not JSON serialize the request body: ~p (~p)~n", [Error, Payload]),
+      rabbit:stop_and_halt()
   end.
+
+
+%% @private
+%% @spec build_registration_body(Service, Name, Port) -> list()
+%% @where Service = list(), Name = list()|undefined, Port = list()|undefined
+%% @doc Return a property list with the payload data structure for registration
+%% @end
+%%
+build_registration_body(Service, undefined, undefined) ->
+  [{<<"Name">>, list_to_binary(Service)}];
+build_registration_body(Service, Name, undefined) ->
+  [{<<"Name">>, list_to_binary(Service)}, {<<"Tags">>, [list_to_binary(Name)]}];
+build_registration_body(Service, undefined, Port) when is_integer(Port) =:= true ->
+  [{<<"Name">>, list_to_binary(Service)}, {<<"Port">>, Port}];
+build_registration_body(Service, undefined, Port) ->
+  [{<<"Name">>, list_to_binary(Service)}, {<<"Port">>, list_to_integer(Port)}];
+build_registration_body(Service, Name, Port) when is_integer(Port) =:= true ->
+  [{<<"Name">>, list_to_binary(Service)}, {<<"Port">>, Port}, {<<"Tags">>, [list_to_binary(Name)]}];
+build_registration_body(Service, Name, Port) ->
+  [{<<"Name">>, list_to_binary(Service)}, {<<"Port">>, list_to_integer(Port)}, {<<"Tags">>, [list_to_binary(Name)]}].
 
 
 %% @private
@@ -165,15 +176,4 @@ register() ->
     {error, Reason} ->
       error_logger:error_msg("Error fetching deregistering node from consul: ~p~n", [Reason]),
       {error, Reason}
-  end.
-
-%% @private
-%% @spec consul_service() -> list()
-%% @doc Return either the configured consul service name or the default
-%% @end
-%%
-consul_service() ->
-  case application:get_env(rabbitmq_autocluster_consul, consul_service) of
-    {ok, ConsulService} -> ConsulService;
-    undefined -> ?DEFAULT_CONSUL_SERVICE
   end.

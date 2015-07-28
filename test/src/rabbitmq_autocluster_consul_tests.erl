@@ -22,22 +22,60 @@ split_uri(UriPart, SplitChar, NoMatchResult, SkipLeft, SkipRight) ->
 
 build_url_test() ->
   application:set_env(rabbitmq_autocluster_consul, consul_acl, undefined),
-  ?assertEqual("http://127.0.0.1:8500/v1/agent/service/deregister/rabbitmq%3Aautocluster",
-               autocluster_consul_client:build_url([agent, service, deregister, "rabbitmq:autocluster"], [])).
+  application:set_env(rabbitmq_autocluster_consul, consul_host, "127.0.0.1"),
+  application:set_env(rabbitmq_autocluster_consul, consul_port, 8500),
+  application:set_env(rabbitmq_autocluster_consul, consul_scheme, "http"),
+  ?assertEqual("http://127.0.0.1:8500/v1/agent/service/deregister/rabbitmq",
+               autocluster_consul_client:build_url([agent, service, deregister, "rabbitmq"], [])).
 
 build_url_with_acl_test() ->
   application:set_env(rabbitmq_autocluster_consul, consul_acl, "aclvalue"),
+  application:set_env(rabbitmq_autocluster_consul, consul_host, "127.0.0.1"),
+  application:set_env(rabbitmq_autocluster_consul, consul_port, 8500),
+  application:set_env(rabbitmq_autocluster_consul, consul_scheme, "http"),
   ?assertEqual("http://127.0.0.1:8500/v1/agent/service/deregister/rabbitmq%3Aautocluster?acl=aclvalue",
                autocluster_consul_client:build_url([agent, service, deregister, "rabbitmq:autocluster"], [])).
 
+build_url_with_port_test() ->
+  application:set_env(rabbitmq_autocluster_consul, consul_acl, undefined),
+  application:set_env(rabbitmq_autocluster_consul, consul_host, "127.0.0.1"),
+  application:set_env(rabbitmq_autocluster_consul, consul_port, 8501),
+  application:set_env(rabbitmq_autocluster_consul, consul_scheme, "http"),
+  ?assertEqual("http://127.0.0.1:8501/v1/agent/service/deregister/rabbitmq%3Aautocluster?tag=foo",
+               autocluster_consul_client:build_url([agent, service, deregister, "rabbitmq:autocluster"], [{tag, "foo"}])).
+
+
+build_url_with_scheme_test() ->
+  application:set_env(rabbitmq_autocluster_consul, consul_acl, undefined),
+  application:set_env(rabbitmq_autocluster_consul, consul_host, "127.0.0.1"),
+  application:set_env(rabbitmq_autocluster_consul, consul_port, 8501),
+  application:set_env(rabbitmq_autocluster_consul, consul_scheme, "https"),
+  ?assertEqual("https://127.0.0.1:8501/v1/agent/service/deregister/rabbitmq%3Aautocluster?tag=foo",
+               autocluster_consul_client:build_url([agent, service, deregister, "rabbitmq:autocluster"], [{tag, "foo"}])).
+
+
 build_url_with_qargs_test() ->
   application:set_env(rabbitmq_autocluster_consul, consul_acl, undefined),
+  application:set_env(rabbitmq_autocluster_consul, consul_host, "127.0.0.1"),
+  application:set_env(rabbitmq_autocluster_consul, consul_port, 8500),
+  application:set_env(rabbitmq_autocluster_consul, consul_scheme, "http"),
   ?assertEqual("http://127.0.0.1:8500/v1/agent/service/deregister/rabbitmq%3Aautocluster?tag=foo",
                autocluster_consul_client:build_url([agent, service, deregister, "rabbitmq:autocluster"], [{tag, "foo"}])).
 
 build_url_with_qargs_and_acl_test() ->
   application:set_env(rabbitmq_autocluster_consul, consul_acl, "abc123"),
+  application:set_env(rabbitmq_autocluster_consul, consul_host, "127.0.0.1"),
+  application:set_env(rabbitmq_autocluster_consul, consul_port, 8500),
+  application:set_env(rabbitmq_autocluster_consul, consul_scheme, "http"),
   ?assertEqual("http://127.0.0.1:8500/v1/agent/service/deregister/rabbitmq%3Aautocluster?acl=abc123&tag=foo",
+               autocluster_consul_client:build_url([agent, service, deregister, "rabbitmq:autocluster"], [{tag, "foo"}])).
+
+build_url_with_env_vars_test() ->
+  os:putenv("CONSUL_ACL", "12fa"),
+  os:putenv("CONSUL_HOST", "192.168.1.1"),
+  os:putenv("CONSUL_PORT", "1234"),
+  os:putenv("CONSUL_SCHEME", "amqp"),
+  ?assertEqual("amqp://192.168.1.1:1234/v1/agent/service/deregister/rabbitmq%3Aautocluster?acl=12fa&tag=foo",
                autocluster_consul_client:build_url([agent, service, deregister, "rabbitmq:autocluster"], [{tag, "foo"}])).
 
 build_path_test() ->
