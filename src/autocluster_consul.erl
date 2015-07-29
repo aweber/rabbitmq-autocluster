@@ -194,11 +194,11 @@ registration_body() ->
 build_registration_body(Service, undefined, undefined, _) ->
   [{"ID", Service}, {"Name", Service}];
 build_registration_body(Service, Name, undefined, _) ->
-  [{"ID", Service}, {"Name", Service}, {"Tags", [Name]}];
+  [{"ID", Service}, {"Name", Service}, {"Tags", [list_to_atom(Name)]}];
 build_registration_body(Service, undefined, Port, TTL) ->
   [{"ID", Service}, {"Name", Service}, {"Port", Port}, {"Check", [{"Notes", ?NOTES}, {"TTL", ttl_string(TTL)}]}];
 build_registration_body(Service, Name, Port, TTL) ->
-  [{"ID", Service}, {"Name", Service}, {"Port", list_to_integer(Port)}, {"Tags", [Name]}, {"Check", [{"Notes", ?NOTES}, {"TTL", ttl_string(TTL)}]}].
+  [{"ID", Service}, {"Name", Service}, {"Port", Port}, {"Tags", [list_to_atom(Name)]}, {"Check", [{"Notes", ?NOTES}, {"TTL", ttl_string(TTL)}]}].
 
 
 %% @private
