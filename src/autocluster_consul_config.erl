@@ -118,6 +118,7 @@ getenv(OS, App, Default) ->
 %% @doc Return the value as a list
 %% @end
 %%
+maybe_convert_from_int([]) -> undefined;
 maybe_convert_from_int(Value) when is_integer(Value) =:= true -> integer_to_list(Value);
 maybe_convert_from_int(Value) when is_list(Value) =:= true -> Value;
 maybe_convert_from_int(Value) ->
@@ -129,6 +130,7 @@ maybe_convert_from_int(Value) ->
 %% @doc Return the value as an integer
 %% @end
 %%
+maybe_convert_to_int([]) -> undefined;
 maybe_convert_to_int(Value) when is_list(Value) =:= true -> list_to_integer(Value);
 maybe_convert_to_int(Value) when is_integer(Value) =:= true -> Value;
 maybe_convert_to_int(Value) ->
