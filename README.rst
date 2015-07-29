@@ -139,6 +139,22 @@ service registration to double as a general RabbitMQ service registration*
 | Default Value        | ``5672``                |
 +----------------------+-------------------------+
 
+
+**Consul Service TTL**
+
+*Used to specify the Consul health check TTL interval that is used to let Consul
+know that RabbitMQ is alive an healthy.*
+
++----------------------+-------------------------+
+| Environment Variable | ``SERVICE_TTL``         |
++----------------------+-------------------------+
+| Setting Key          | ``consul_service_ttl``  |
++----------------------+-------------------------+
+| Data type            | ``list``                |
++----------------------+-------------------------+
+| Default Value        | ``30``                  |
++----------------------+-------------------------+
+
 *Exaple rabbitmq.config*
 
 ..  code-block:: erlang

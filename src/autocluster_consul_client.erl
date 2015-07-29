@@ -24,9 +24,14 @@
 %% @end
 %%
 get(Path, Args) ->
-  case httpc:request(build_url(Path, Args)) of
-    {ok, {{_, 200, _}, _, Body}} -> rabbit_misc:json_decode(Body);
-    {ok, {{_, S, _}, _, Body}} -> {error, S};
+  URL = build_url(Path, Args),
+  case httpc:request(URL) of
+    {ok, {{_, 200, _}, _, Body}} ->
+      case rabbit_misc:json_decode(Body) of
+        {ok, V} -> {ok, V};
+        error -> ok
+      end;
+    {ok, {{_, S, _}, _, _}} -> {error, S};
     {error, Reason} -> {error, Reason}
   end.
 
@@ -38,7 +43,9 @@ get(Path, Args) ->
 post(Path, Body) ->
   case httpc:request(post, {build_url(Path, []), [], ?CONTENT_JSON, Body}, [], []) of
     {ok, {{_, 200, _}, _, _}} -> ok;
-    {ok, {{_, S, _}, _, _}} -> {error, S};
+    {ok, {{_, S, Error}, _, _}} ->
+      error_logger:error_msg("Consul response (~s): ~s~n", [S, Error]),
+      {error, S};
     {error, Reason} -> {error, Reason}
   end.
 
