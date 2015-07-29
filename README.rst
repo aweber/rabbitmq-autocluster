@@ -139,6 +139,7 @@ service registration to double as a general RabbitMQ service registration*
 | Default Value        | ``5672``                |
 +----------------------+-------------------------+
 
+.. note:: Set the ``SERVICE_PORT`` to an empty value to disable port announcement and health checking.  For example: ``SERVICE_PORT=""``
 
 **Consul Service TTL**
 
