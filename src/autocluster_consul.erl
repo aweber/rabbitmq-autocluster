@@ -187,7 +187,12 @@ host_sname(Value) ->
   Parts = string:tokens(binary_to_list(Value), "."),
   case length(Parts) of
     1 -> binary_to_list(Value);
-    _ -> binary_to_list(lists:nth(1, Parts))
+    _ ->
+      SName = lists:nth(1, Parts),
+      case is_list(SName) of
+        true -> SName;
+        false -> binary_to_list(SName)
+      end
   end.
 
 
