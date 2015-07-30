@@ -122,7 +122,7 @@ maybe_convert_from_int([]) -> undefined;
 maybe_convert_from_int(Value) when is_integer(Value) =:= true -> integer_to_list(Value);
 maybe_convert_from_int(Value) when is_list(Value) =:= true -> Value;
 maybe_convert_from_int(Value) ->
-  error_logger:error_msg("Unexpected data type for int or list value: ~p~n", [Value]),
+  rabbit_log:error("Unexpected data type for int or list value: ~p~n", [Value]),
   Value.
 
 %% @spec maybe_convert_to_int(Value) -> integer()
@@ -134,5 +134,5 @@ maybe_convert_to_int([]) -> undefined;
 maybe_convert_to_int(Value) when is_list(Value) =:= true -> list_to_integer(Value);
 maybe_convert_to_int(Value) when is_integer(Value) =:= true -> Value;
 maybe_convert_to_int(Value) ->
-  error_logger:error_msg("Unexpected data type for int or list value: ~p~n", [Value]),
+  rabbit_log:error("Unexpected data type for int or list value: ~p~n", [Value]),
   Value.

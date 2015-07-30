@@ -17,7 +17,6 @@
          build_query/2,
          percent_encode/1]).
 
-
 %% @public
 %% @spec get(list(), proplist()) -> list()
 %% @doc Perform a HTTP GET request to consul for the specified path and qargs
@@ -44,7 +43,7 @@ post(Path, Body) ->
   case httpc:request(post, {build_url(Path, []), [], ?CONTENT_JSON, Body}, [], []) of
     {ok, {{_, 200, _}, _, _}} -> ok;
     {ok, {{_, S, Error}, _, _}} ->
-      error_logger:error_msg("Consul response (~s): ~s~n", [S, Error]),
+      rabbit_log:error("autocluster_client: Consul response (~s) ~s~n", [S, Error]),
       {error, S};
     {error, Reason} -> {error, Reason}
   end.
