@@ -50,8 +50,6 @@ ADD etc/security/limits.conf /etc/security/limits.conf
 ADD etc/sysctl.conf /etc/sysctl.conf
 
 ADD etc/consul.d/consul.json /etc/consul.d/consul.json
-ADD etc/consul.d/amqp.json /etc/consul.d/amqp.json
-ADD etc/consul.d/http.json /etc/consul.d/http.json
 
 ADD etc/supervisord.conf /etc/
 ADD etc/supervisor.d/consul.conf /etc/supervisor.d/
@@ -60,7 +58,7 @@ ADD etc/supervisor.d/rabbitmq.conf /etc/supervisor.d/
 ADD etc/rabbitmq/rabbitmq.config /etc/rabbitmq/
 ADD var/lib/rabbitmq/.erlang.cookie /var/lib/rabbitmq/
 ADD var/lib/rabbitmq/.erlang.cookie /root/
-ADD rabbitmq_autocluster_consul-0.2.0.ez /usr/lib/rabbitmq/lib/rabbitmq_server-3.5.1/plugins/
+ADD rabbitmq_autocluster_consul-0.0.0.ez /usr/lib/rabbitmq/lib/rabbitmq_server-3.5.4/plugins/
 RUN \
   chown rabbitmq:rabbitmq /var/lib/rabbitmq/.erlang.cookie && \
   chmod 0600 /var/lib/rabbitmq/.erlang.cookie && \
