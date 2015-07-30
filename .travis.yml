@@ -8,9 +8,8 @@ addons:
       - xsltproc
 env:
   - BUILD_DIR=$HOME/rabbitmq-public-umbrella CONSUL_VERSION=0.5.2 RABBIT_TAG=v3_5_4
-before_install:
-  - $TRAVIS_BUILD_DIR/travis-umbrella-setup.sh
 install:
+  - $TRAVIS_BUILD_DIR/travis-umbrella-setup.sh
   - $TRAVIS_BUILD_DIR/travis-install-consul.sh
 script: cd $BUILD_DIR/rabbitmq-autocluster-consul && make test
 after_script:
