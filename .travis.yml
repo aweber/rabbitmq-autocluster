@@ -1,13 +1,16 @@
+sudo: false
 language: erlang
 otp_release:
-  - 17.4
+  - 17.5
+addons:
+  apt:
+    packages:
+      - xsltproc
 env:
-  - BUILD_DIR=$HOME/rabbitmq-public-umbrella CONSUL_VERSION=0.5.0 RABBIT_TAG=v3_5_1
+  - BUILD_DIR=$HOME/rabbitmq-public-umbrella CONSUL_VERSION=0.5.2 RABBIT_TAG=v3_5_4
 before_install:
   - $TRAVIS_BUILD_DIR/travis-umbrella-setup.sh
 install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq -y xsltproc
   - $TRAVIS_BUILD_DIR/travis-install-consul.sh
 script: cd $BUILD_DIR/rabbitmq-autocluster-consul && make test
 after_script:
