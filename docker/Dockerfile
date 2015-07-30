@@ -38,7 +38,7 @@ RUN apt-get -qq update && apt-get install -y -qq curl build-essential git rabbit
 
 # Install consul
 RUN \
-  curl -o /tmp/consul.zip -L https://dl.bintray.com/mitchellh/consul/0.5.0_linux_amd64.zip && \
+  curl -o /tmp/consul.zip -L https://dl.bintray.com/mitchellh/consul/0.5.2_linux_amd64.zip && \
   unzip /tmp/consul.zip -d /tmp/ && \
   chmod +x /tmp/consul && \
   mv /tmp/consul /usr/local/bin/consul && \
@@ -58,12 +58,12 @@ ADD etc/supervisor.d/rabbitmq.conf /etc/supervisor.d/
 ADD etc/rabbitmq/rabbitmq.config /etc/rabbitmq/
 ADD var/lib/rabbitmq/.erlang.cookie /var/lib/rabbitmq/
 ADD var/lib/rabbitmq/.erlang.cookie /root/
-ADD rabbitmq_autocluster_consul-0.0.0.ez /usr/lib/rabbitmq/lib/rabbitmq_server-3.5.4/plugins/
+ADD autocluster-0.0.0.ez /usr/lib/rabbitmq/lib/rabbitmq_server-3.5.4/plugins/
 RUN \
   chown rabbitmq:rabbitmq /var/lib/rabbitmq/.erlang.cookie && \
   chmod 0600 /var/lib/rabbitmq/.erlang.cookie && \
   chmod 0600 /root/.erlang.cookie && \
-  rabbitmq-plugins enable --offline rabbitmq_management rabbitmq_autocluster_consul
+  rabbitmq-plugins enable --offline rabbitmq_management autocluster
 
 # For consul
 ENV GOMAXPROCS 10
