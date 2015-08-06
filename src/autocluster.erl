@@ -9,7 +9,7 @@
 
 -rabbit_boot_step({?MODULE,
                    [{description, <<"Automated cluster configuration">>},
-                    {mfa,         {autocluster_consul, init, []}},
+                    {mfa,         {autocluster, init, []}},
                     {enables,     pre_boot}]}).
 
 
@@ -77,18 +77,24 @@ ensure_registered(Backend) ->
 %% @end
 %%
 ensure_registered(Name, Module) ->
-  case lists:member(node(), Module:nodelist()) of
-    true  -> ok;
-    false ->
-      autocluster_log:info("Registering node with ~p", [Name]),
-      case Module:register() of
-        ok ->
-          autocluster_log:debug("Registered node"),
-          ok;
-        {error, Reason} ->
-          autocluster_log:error("Error registering node with ~p: ~p", [Name, Reason]),
-          error
-      end
+  case Module:nodelist() of
+    {ok, Nodes} ->
+      case lists:member(node(), Nodes) of
+        true  -> ok;
+        false ->
+          autocluster_log:info("Registering node with ~p", [Name]),
+          case Module:register() of
+            ok ->
+              autocluster_log:debug("Registered node"),
+              ok;
+            {error, Reason} ->
+              autocluster_log:error("Error registering node with ~p: ~p", [Name, Reason]),
+              error
+          end
+      end;
+    {error, Reason} ->
+      autocluster_log:error("Could not fetch node list from ~p: ~p", [Module, Reason]),
+      error
   end.
 
 

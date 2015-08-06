@@ -7,7 +7,7 @@
 -record(config, {key, os, default, type}).
 
 -define(CONFIG_MAP,
-        [{config, backend,              "AUTOCLUSTER_TYPE",      "consul",    string},
+        [{config, backend,              "AUTOCLUSTER_TYPE",      consul,      atom},
          {config, longname,             "RABBITMQ_LONGNAME",     false,       atom},
          {config, cluster_name,         "CLUSTER_NAME",          undefined,   string},
          {config, consul_acl,           "CONSUL_ACL",            undefined,   string},
