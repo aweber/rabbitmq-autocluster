@@ -12,12 +12,11 @@
          node_name/1]).
 
 
-%% @spec as_string(Value) -> list()
+%% @spec as_atom(Value) -> list()
 %% where Value = list()|integer()
 %% @doc Return the value as a list
 %% @end
 %%
-as_atom([]) -> undefined;
 as_atom(Value) when is_atom(Value) =:= true -> Value;
 as_atom(Value) when is_binary(Value) =:= true -> list_to_atom(binary_to_list(Value));
 as_atom(Value) when is_list(Value) =:= true -> list_to_atom(Value);
