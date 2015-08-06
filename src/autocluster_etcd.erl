@@ -40,7 +40,7 @@ init() ->
       Interval = autocluster_config:get(etcd_node_ttl),
       set_etcd_node_key(),
       autocluster_log:info("Starting node key update TTL Timer"),
-      {ok, _} = timer:apply_interval(Interval * 750, ?MODULE, set_etcd_node_key, []),
+      {ok, _} = timer:apply_interval(Interval * 500, ?MODULE, set_etcd_node_key, []),
       ok;
     _ -> ok
   end.
