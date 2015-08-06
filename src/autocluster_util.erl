@@ -53,7 +53,7 @@ as_string(Value) ->
   Value.
 
 
-%% @spec node_name(mixed) -> string()
+%% @spec node_name(mixed) -> atom()
 %% @doc Return the proper node name for clustering purposes
 %% @end
 %%
@@ -67,4 +67,4 @@ node_name(Value) ->
         _ -> as_string(lists:nth(1, Parts))
       end
   end,
-  string:join(["rabbit", Host], "@").
+  list_to_atom(string:join(["rabbit", Host], "@")).
