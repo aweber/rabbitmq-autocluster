@@ -28,4 +28,4 @@ warning(Message, Args) -> log(rabbit_log, error, Message, Args).
 %% @end
 %%
 log(Module, Fun, Message, Args) ->
-  Module:Fun(string:join(["autocluster_consul: ", Message, "~n"], ""), Args).
+  Module:Fun(string:join(["autocluster: ", Message, "~n"], ""), Args).
