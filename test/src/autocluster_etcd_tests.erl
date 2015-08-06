@@ -12,7 +12,7 @@ extract_nodes_test() ->
                   {struct, [{<<"key">>, <<"rabbitmq/default/foo">>}]},
                   {struct, [{<<"key">>, <<"rabbitmq/default/bar">>}]},
                   {struct, [{<<"key">>, <<"rabbitmq/default/baz">>}]}]}]}}]},
-  Expectation = ["rabbit@foo", "rabbit@bar", "rabbit@baz"],
+  Expectation = ['rabbit@foo', 'rabbit@bar', 'rabbit@baz'],
   ?assertEqual(Expectation, autocluster_etcd:extract_nodes(Values)).
 
 base_path_test() ->
@@ -20,7 +20,7 @@ base_path_test() ->
   ?assertEqual([v2, keys, "rabbitmq", "default"], autocluster_etcd:base_path()).
 
 get_node_from_key_test() ->
-  ?assertEqual("rabbit@foo", autocluster_etcd:get_node_from_key(<<"rabbitmq/default/foo">>)).
+  ?assertEqual('rabbit@foo', autocluster_etcd:get_node_from_key(<<"rabbitmq/default/foo">>)).
 
 node_path_test() ->
   autocluster_config_tests:reset_config(),

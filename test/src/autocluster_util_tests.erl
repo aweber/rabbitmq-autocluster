@@ -27,18 +27,18 @@ as_string_integer_test() ->
   ?assertEqual("42", autocluster_util:as_string(42)).
 
 node_name_sname_from_sname_test() ->
-  ?assertEqual("rabbit@node1", autocluster_util:node_name("node1")).
+  ?assertEqual('rabbit@node1', autocluster_util:node_name("node1")).
 
 node_name_sname_from_binary_sname_test() ->
-  ?assertEqual("rabbit@node1", autocluster_util:node_name(<<"node1">>)).
+  ?assertEqual('rabbit@node1', autocluster_util:node_name(<<"node1">>)).
 
 node_name_sname_from_lname_test() ->
   autocluster_config_tests:reset_config(),
-  ?assertEqual("rabbit@node2", autocluster_util:node_name("node2.foo.bar")).
+  ?assertEqual('rabbit@node2', autocluster_util:node_name("node2.foo.bar")).
 
 node_name_lname_test() ->
   autocluster_config_tests:reset_config(),
   application:set_env(autocluster, longname, true),
-  ?assertEqual("rabbit@node3.foo.bar", autocluster_util:node_name("node3.foo.bar")).
+  ?assertEqual('rabbit@node3.foo.bar', autocluster_util:node_name("node3.foo.bar")).
 
 
