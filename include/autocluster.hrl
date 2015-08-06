@@ -9,7 +9,7 @@
 -define(CONFIG_MAP,
         [{config, backend,              "AUTOCLUSTER_TYPE",      consul,      atom},
          {config, autocluster_host,     "AUTOCLUSTER_HOST",      "undefined", string},
-         {config, longname,             "RABBITMQ_LONGNAME",     false,       atom},
+         {config, longname,             "RABBITMQ_USE_LONGNAME", false,       atom},
          {config, node_type,            "RABBITMQ_NODE_TYPE",    disc,        atom},
          {config, cluster_name,         "CLUSTER_NAME",          "undefined", string},
          {config, consul_acl,           "CONSUL_ACL",            "undefined", string},
