@@ -29,7 +29,7 @@ The following settings apply to the general configuration of the plugin.
 
 **Backend Type**
 
-*Which type of service discovery backend to use. One of ``consul``, ``etcd``, or ``dns``.*
+Which type of service discovery backend to use. One of ``consul``, ``etcd``, or ``dns``.
 
 +----------------------+------------------------+
 | Environment Variable | ``AUTOCLUSTER_TYPE``   |
@@ -43,8 +43,8 @@ The following settings apply to the general configuration of the plugin.
 
 **Long name Support**
 
-*When set to ``true`` this will cause RabbitMQ and the autocluster plugin to use fully
-qualified names to identify nodes.*
+When set to ``true`` this will cause RabbitMQ and the autocluster plugin to use fully
+qualified names to identify nodes.
 
 +----------------------+---------------------------+
 | Environment Variable | ``RABBITMQ_USE_LONGNAME`` |
@@ -58,8 +58,8 @@ qualified names to identify nodes.*
 
 **RabbitMQ Cluster Name**
 
-*A RabbitMQ cluster name to restrict the cluster membership to (optional). This only
-works with the Consul and etcd backends.*
+A RabbitMQ cluster name to restrict the cluster membership to (optional). This only
+works with the Consul and etcd backends*
 
 +----------------------+-------------------------+
 | Environment Variable | ``CLUSTER_NAME``        |
@@ -77,7 +77,7 @@ The following settings apply to the consul backend only.
 
 **Consul URL Scheme**
 
-*The URI scheme to use when connecting to Consul*
+The URI scheme to use when connecting to Consul
 
 +----------------------+------------------------+
 | Environment Variable | ``CONSUL_SCHEME``      |
@@ -91,7 +91,7 @@ The following settings apply to the consul backend only.
 
 **Consul Host**
 
-*The hostname to use when connecting to Consul's API*
+The hostname to use when connecting to Consul's API
 
 +----------------------+------------------------+
 | Environment Variable | ``CONSUL_HOST``        |
@@ -105,7 +105,7 @@ The following settings apply to the consul backend only.
 
 **Consul Port**
 
-*The port to use when connecting to Consul's API*
+The port to use when connecting to Consul's API
 
 +----------------------+------------------------+
 | Environment Variable | ``CONSUL_PORT``        |
@@ -119,7 +119,7 @@ The following settings apply to the consul backend only.
 
 **Consul ACL Token**
 
-*The Consul access token to use when registering the node with Consul (optional)*
+The Consul access token to use when registering the node with Consul *(optional)*
 
 +----------------------+------------------------+
 | Environment Variable | ``CONSUL_ACL``         |
@@ -133,7 +133,7 @@ The following settings apply to the consul backend only.
 
 **Consul Service Name**
 
-*The name of the service to register with Consul for automatic clustering*
+The name of the service to register with Consul for automatic clustering
 
 +----------------------+-------------------------+
 | Environment Variable | ``CONSUL_SERVICE``      |
@@ -147,8 +147,8 @@ The following settings apply to the consul backend only.
 
 **Consul Service Prefix**
 
-*A prefix that is prepending to the service name when registering with Consul
-for automatic clustering (optional)*
+A prefix that is prepending to the service name when registering with Consul
+for automatic clustering *(optional)*
 
 +----------------------+---------------------------+
 | Environment Variable | ``CONSUL_SERVICE_PREFIX`` |
@@ -162,8 +162,8 @@ for automatic clustering (optional)*
 
 **Consul Service Port**
 
-*Used to set a port for the service in Consul, allowing for the automatic clustering
-service registration to double as a general RabbitMQ service registration*
+Used to set a port for the service in Consul, allowing for the automatic clustering
+service registration to double as a general RabbitMQ service registration
 
 +----------------------+-------------------------+
 | Environment Variable | ``CONSUL_SERVICE_PORT`` |
@@ -180,8 +180,8 @@ and health checking.  For example: ``SERVICE_PORT=""``
 
 **Consul Service TTL**
 
-*Used to specify the Consul health check TTL interval that is used to let Consul
-know that RabbitMQ is alive an healthy.*
+Used to specify the Consul health check TTL interval that is used to let Consul
+know that RabbitMQ is alive an healthy.
 
 +----------------------+-------------------------+
 | Environment Variable | ``CONSUL_SERVICE_TTL``  |
@@ -199,8 +199,8 @@ The following setting applies only to the DNS backend.
 
 **DNS Hostname**
 
-*The FQDN to use when the backend type is ``dns`` for looking up the RabbitMQ nodes to cluster
-via a DNS A record round-robin.*
+The FQDN to use when the backend type is ``dns`` for looking up the RabbitMQ nodes to cluster
+via a DNS A record round-robin.
 
 +----------------------+------------------------+
 | Environment Variable | ``AUTOCLUSTER_HOST``   |
@@ -218,7 +218,7 @@ The following settings apply to the etcd backend only.
 
 **etcd URL Scheme**
 
-*The URI scheme to use when connecting to etcd*
+The URI scheme to use when connecting to etcd
 
 +----------------------+------------------------+
 | Environment Variable | ``ETCD_SCHEME``        |
@@ -232,7 +232,7 @@ The following settings apply to the etcd backend only.
 
 **etcd Host**
 
-*The hostname to use when connecting to etcd's API*
+The hostname to use when connecting to etcd's API
 
 +----------------------+------------------------+
 | Environment Variable | ``ETCD_HOST``          |
@@ -246,7 +246,7 @@ The following settings apply to the etcd backend only.
 
 **etcd Port**
 
-*The port to use when connecting to etcd's API*
+The port to connect to when using to etcd's API
 
 +----------------------+------------------------+
 | Environment Variable | ``ETCD_PORT``          |
@@ -260,7 +260,7 @@ The following settings apply to the etcd backend only.
 
 **etcd Key Prefix**
 
-*The prefix used when storing cluster membership keys in etcd*
+The prefix used when storing cluster membership keys in etcd
 
 +----------------------+-------------------------+
 | Environment Variable | ``ETCD_PREFIX``         |
@@ -274,8 +274,8 @@ The following settings apply to the etcd backend only.
 
 **etcd Node TTL**
 
-*Used to specify how long a node can be down before it is removed from etcd's
-list of RabbitMQ nodes in the cluster*
+Used to specify how long a node can be down before it is removed from etcd's
+list of RabbitMQ nodes in the cluster
 
 +----------------------+-------------------------+
 | Environment Variable | ``ETCD_TTL``            |
