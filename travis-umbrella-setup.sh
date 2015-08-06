@@ -13,3 +13,4 @@ if [ -d ${BUILD_DIR}/autocluster ]; then
 fi
 mkdir -p ${BUILD_DIR}/autocluster
 cp -r ${TRAVIS_BUILD_DIR}/* ${BUILD_DIR}/autocluster/
+cd ${BUILD_DIR}/autocluster
