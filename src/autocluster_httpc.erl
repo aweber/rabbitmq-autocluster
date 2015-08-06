@@ -22,7 +22,7 @@
 %% @end
 %%
 get(Scheme, Host, Port, Path, Args) ->
-  URL = autocluster_util:build_uri(Scheme, Host, Port, Path, Args),
+  URL = build_uri(Scheme, Host, Port, Path, Args),
   case httpc:request(URL) of
     {ok, {{_, 200, _}, _, Body}} -> {ok, decode_body(Body)};
     {ok, {{_, 201, _}, _, Body}} -> {ok, decode_body(Body)};
