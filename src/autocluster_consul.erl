@@ -36,9 +36,8 @@ init() ->
       case autocluster_config:get(consul_service_ttl) of
         undefined -> ok;
         Interval  ->
-          send_health_check_pass(),
           autocluster_log:info("Starting Consul Health Check TTL Timer"),
-          {ok, _} = timer:apply_interval(Interval * 750, ?MODULE, send_health_check_pass, []),
+          {ok, _} = timer:apply_interval(Interval * 500, ?MODULE, send_health_check_pass, []),
           ok
       end;
     _ -> ok
@@ -73,7 +72,6 @@ nodelist() ->
 %% @end
 %%
 register() ->
-  autocluster_log:info("Registering node with Consul"),
   case autocluster_httpc:post(autocluster_config:get(consul_scheme),
                               autocluster_config:get(consul_host),
                               autocluster_config:get(consul_port),
@@ -108,7 +106,6 @@ send_health_check_pass() ->
 %% @end
 %%
 unregister() ->
-  autocluster_log:info("Unregistering node with Consul"),
   case autocluster_httpc:get(autocluster_config:get(consul_scheme),
                              autocluster_config:get(consul_host),
                              autocluster_config:get(consul_port),
