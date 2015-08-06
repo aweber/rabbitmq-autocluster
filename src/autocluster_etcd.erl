@@ -12,6 +12,11 @@
          register/0,
          unregister/0]).
 
+%% test_exports
+-export([base_path/0,
+         extract_nodes/2,
+         get_node_from_key/1,
+         node_path/0]).
 
 -include("autocluster.hrl").
 
@@ -62,14 +67,14 @@ nodelist() ->
 
 
 %% @spec register() -> ok|{error, Reason :: string()}
-%% @doc Register the node with etcd
+%% @doc Stub, with etcd we won't add the node until the this module's bootstep runs
 %% @end
 %%
 register() -> ok.
 
 
 %% @spec unregister() -> ok|{error, Reason :: string()}
-%% @doc Unregister the rabbitmq service for this node from Consul
+%% @doc Remove this node's key from etcd
 %% @end
 %%
 unregister() ->
@@ -84,6 +89,10 @@ unregister() ->
   end.
 
 
+%% @spec set_etcd_node_key() -> ok|{error, Reason :: string()}
+%% @doc Update etcd, setting a key for this node with a TTL of etcd_node_ttl
+%% @end
+%%
 set_etcd_node_key() ->
   autocluster_log:debug("Updated node registration with etcd"),
   Interval = autocluster_config:get(etcd_node_ttl),
@@ -97,6 +106,10 @@ set_etcd_node_key() ->
   end.
 
 
+%% @spec base_path() -> list()
+%% @doc Return a list of path segments that are the base path for etcd key actions
+%% @end
+%%
 base_path() ->
   Cluster = case autocluster_config:get(cluster_name) of
     "undefined" -> "default";
@@ -105,12 +118,19 @@ base_path() ->
   [v2, keys, autocluster_config:get(etcd_prefix), Cluster].
 
 
+%% @spec extract_nodes(list(), list()) -> list()
+%% @doc Return the list of erlang nodes
+%% @end
+%%
 extract_nodes([], Nodes) -> Nodes;
 extract_nodes([{struct, H}|T], Nodes) ->
-  Node = get_node(proplists:get_value(<<"key">>, H)),
-  extract_nodes(T, lists:merge(Nodes, [autocluster_util:node_name(Node)])).
+  extract_nodes(T, lists:append(Nodes, [get_node_from_key(proplists:get_value(<<"key">>, H))])).
 
 
+%% @spec extract_nodes(list()) -> list()
+%% @doc Return the list of erlang nodes
+%% @end
+%%
 extract_nodes([]) -> [];
 extract_nodes({struct, Nodes}) ->
   {struct, Dir} = proplists:get_value(<<"node">>, Nodes),
@@ -123,11 +143,19 @@ extract_nodes(Miss) ->
   [].
 
 
-get_node(V) ->
-  Strip = autocluster_httpc:build_path(lists:sublist(base_path(), 3, 2)) ++ "/",
-  string:substr(binary_to_list(V), length(Strip) + 1).
+%% @spec get_node_from_key(string()) -> string()
+%% @doc Given an etcd key, return the erlang node name
+%% @end
+%%
+get_node_from_key(V) ->
+  Path = string:concat(autocluster_httpc:build_path(lists:sublist(base_path(), 3, 2)), "/"),
+  autocluster_util:node_name(string:substr(binary_to_list(V), length(Path))).
 
 
+%% @spec make_etcd_directory() -> list()
+%% @doc Ensure that the directory key for the cluster exists in etcd
+%% @end
+%%
 make_etcd_directory() ->
   autocluster_log:info("Creating etcd base path"),
   case autocluster_httpc:put(autocluster_config:get(etcd_scheme),
@@ -139,6 +167,10 @@ make_etcd_directory() ->
   end.
 
 
+%% @spec node_path() -> list()
+%% @doc Return a list of path segments that are the base path for etcd key actions
+%% @end
+%%
 node_path() ->
-  Node = string:substr(atom_to_list(node()), 8),
+  [_, Node] = string:tokens(atom_to_list(node()), "@"),
   lists:append(base_path(), [Node]).

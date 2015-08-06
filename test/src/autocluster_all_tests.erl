@@ -7,6 +7,7 @@
 run() ->
   Result = {eunit:test(autocluster_config_tests, [verbose]),
             eunit:test(autocluster_consul_tests, [verbose]),
+            eunit:test(autocluster_etcd_tests, [verbose]),
             eunit:test(autocluster_httpc_tests, [verbose]),
             eunit:test(autocluster_util_tests, [verbose])},
-  ?assertEqual({ok, ok, ok, ok}, Result).
+  ?assertEqual({ok, ok, ok, ok, ok}, Result).
