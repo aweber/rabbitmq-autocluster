@@ -23,16 +23,13 @@ Configuration
 Configuration for the plugin can be set in two places: operating system environment variables
 or the ``rabbitmq.config`` file under the ``autocluster`` stanza.
 
-Settings
-^^^^^^^^
-
-General
-```````
+General Settings
+^^^^^^^^^^^^^^^^
 The following settings apply to the general configuration of the plugin.
 
 **Backend Type**
 
-* Which type of service discovery backend to use. One of ``consul``, ``etcd``, or ``dns``.*
+*Which type of service discovery backend to use. One of ``consul``, ``etcd``, or ``dns``.*
 
 +----------------------+------------------------+
 | Environment Variable | ``AUTOCLUSTER_TYPE``   |
@@ -46,7 +43,7 @@ The following settings apply to the general configuration of the plugin.
 
 **Long name Support**
 
-* When set to ``true`` this will cause RabbitMQ and the autocluster plugin to use fully
+*When set to ``true`` this will cause RabbitMQ and the autocluster plugin to use fully
 qualified names to identify nodes.*
 
 +----------------------+---------------------------+
@@ -74,8 +71,8 @@ works with the Consul and etcd backends.*
 | Default Value        | null                    |
 +----------------------+-------------------------+
 
-Consul
-``````
+Consul Settings
+^^^^^^^^^^^^^^^
 The following settings apply to the consul backend only.
 
 **Consul URL Scheme**
@@ -196,13 +193,13 @@ know that RabbitMQ is alive an healthy.*
 | Default Value        | ``30``                  |
 +----------------------+-------------------------+
 
-dns
-```
+DNS Settings
+^^^^^^^^^^^^
 The following setting applies only to the DNS backend.
 
 **DNS Hostname**
 
-* The FQDN to use when the backend type is ``dns`` for looking up the RabbitMQ nodes to cluster
+*The FQDN to use when the backend type is ``dns`` for looking up the RabbitMQ nodes to cluster
 via a DNS A record round-robin.*
 
 +----------------------+------------------------+
@@ -215,8 +212,8 @@ via a DNS A record round-robin.*
 | Default Value        | ``consul``             |
 +----------------------+------------------------+
 
-etcd
-````
+etcd Settings
+^^^^^^^^^^^^^
 The following settings apply to the etcd backend only.
 
 **etcd URL Scheme**
@@ -290,8 +287,8 @@ list of RabbitMQ nodes in the cluster*
 | Default Value        | ``30``                  |
 +----------------------+-------------------------+
 
-*Exaple rabbitmq.config*
-
+Example rabbitmq.config
+^^^^^^^^^^^^^^^^^^^^^^^
 ..  code-block:: erlang
 
     [{autocluster,
