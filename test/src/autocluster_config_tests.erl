@@ -21,12 +21,12 @@ config_get_backend_default_test() ->
 config_get_backend_os_test() ->
   reset_config(),
   os:putenv("AUTOCLUSTER_TYPE", "etcd"),
-  ?assertEqual("etcd", autocluster_config:get(backend)).
+  ?assertEqual(etcd, autocluster_config:get(backend)).
 
 config_get_backend_app_test() ->
   reset_config(),
   application:set_env(autocluster, backend, "srv"),
-  ?assertEqual("srv", autocluster_config:get(backend)).
+  ?assertEqual(srv, autocluster_config:get(backend)).
 
 config_get_app_integer_value_test() ->
   reset_config(),
