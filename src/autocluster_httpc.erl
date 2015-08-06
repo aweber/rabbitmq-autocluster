@@ -87,6 +87,7 @@ build_query([Key|Args], Parts) ->
 build_query([], Parts) ->
   string:join(Parts, "&").
 
+
 %% @public
 %% @spec get(Scheme, Host, Port, Path, Args) -> Result
 %% @where Scheme = string(),
@@ -99,16 +100,8 @@ build_query([], Parts) ->
 %% @end
 %%
 get(Scheme, Host, Port, Path, Args) ->
-  URL = build_uri(Scheme, Host, Port, Path, Args),
-  case httpc:request(URL) of
-    {ok, {{_, 200, _}, Headers, Body}} ->
-      {ok, decode_body(proplists:get_value("content-type", Headers), Body)};
-    {ok, {{_, 404, _}, _, _}}    -> {error, 404};
-    {ok, {{_, S, Error}, _, _}} ->
-      autocluster_log:error("GET response (~p) ~s~n", [S, Error]),
-      {error, S};
-    {error, Reason} -> {error, Reason}
-  end.
+  Response = httpc:request(build_uri(Scheme, Host, Port, Path, Args)),
+  parse_response(Response).
 
 
 %% @public
@@ -125,17 +118,8 @@ get(Scheme, Host, Port, Path, Args) ->
 %%
 post(Scheme, Host, Port, Path, Args, Body) ->
   URL = build_uri(Scheme, Host, Port, Path, Args),
-  case httpc:request(post, {URL, [], ?CONTENT_JSON, Body}, [], []) of
-    {ok, {{_, 200, _}, Headers, Body}} ->
-      {ok, decode_body(proplists:get_value("content-type", Headers), Body)};
-    {ok, {{_, 201, _}, Headers, Body}} ->
-      {ok, decode_body(proplists:get_value("content-type", Headers), Body)};
-    {ok, {{_, 204, _}, _, _}}    -> {ok, []};
-    {ok, {{_, S, Error}, _, _}} ->
-      autocluster_log:error("POST response (~p) ~s", [S, Error]),
-      {error, S};
-    {error, Reason} -> {error, Reason}
-  end.
+  Response = httpc:request(post, {URL, [], ?CONTENT_JSON, Body}, [], []),
+  parse_response(Response).
 
 
 %% @public
@@ -152,16 +136,8 @@ post(Scheme, Host, Port, Path, Args, Body) ->
 %%
 put(Scheme, Host, Port, Path, Args, Body) ->
   URL = build_uri(Scheme, Host, Port, Path, Args),
-  case httpc:request(put, {URL, [], ?CONTENT_URLENCODED, Body}, [], []) of
-    {ok, {{_, 200, _}, Headers, Body}} ->
-      {ok, decode_body(proplists:get_value("content-type", Headers), Body)};
-    {ok, {{_, 201, Response}, _, _}} -> {ok, Response};
-    {ok, {{_, 204, _}, _, _}} -> {ok, []};
-    {ok, {{_, S, Error}, _, _}} ->
-      autocluster_log:error("PUT response (~p) ~s", [S, Error]),
-      {error, S};
-    {error, Reason} -> {error, Reason}
-  end.
+  Response = httpc:request(put, {URL, [], ?CONTENT_URLENCODED, Body}, [], []),
+  parse_response(Response).
 
 
 %% @private
@@ -175,6 +151,33 @@ decode_body(?CONTENT_JSON, Body) ->
     {ok, Value} -> Value;
     error       -> []
   end.
+
+
+%% @private
+%% @spec parse_response(Response) -> {ok, string()} | {error, mixed}
+%% @where Response = {status_line(), headers(), Body} | {status_code(), Body}
+%% @doc Decode the response body and return a list
+%% @end
+%%
+parse_response({error, Reason}) ->
+  autocluster_log:error("HTTP Error ~p", [Reason]),
+  {error, Reason};
+
+parse_response({ok, 200, Body})  -> {ok, decode_body(?CONTENT_JSON, Body)};
+parse_response({ok, 201, Body})  -> {ok, decode_body(?CONTENT_JSON, Body)};
+parse_response({ok, 204, _})     -> {ok, []};
+parse_response({ok, Code, Body}) ->
+  autocluster_log:error("HTTP Response (~p) ~s", [Code, Body]),
+  {error, integer_to_list(Code)};
+
+parse_response({ok, {{_,200,_},Headers,Body}}) ->
+  {ok, decode_body(proplists:get_value("content-type", Headers, ?CONTENT_JSON), Body)};
+parse_response({ok,{{_,201,_},Headers,Body}}) ->
+  {ok, decode_body(proplists:get_value("content-type", Headers, ?CONTENT_JSON), Body)};
+parse_response({ok,{{_,204,_},_,_}}) -> {ok, []};
+parse_response({ok,{{_Vsn,Code,_Reason},_,Body}}) ->
+  autocluster_log:error("HTTP Response (~p) ~s", [Code, Body]),
+  {error, integer_to_list(Code)}.
 
 
 %% @private
