@@ -7,7 +7,7 @@
 
 reg_body_service_only_test() ->
   ?assertEqual([{"ID", "test"}, {"Name", "test"}],
-               autocluster_consul:registration_body("test", undefined, undefined, undefined)).
+               autocluster_consul:registration_body("test", "undefined", undefined, undefined)).
 
 reg_body_service_and_name_test() ->
   ?assertEqual([{"ID", "test"}, {"Name", "test"}, {"Tags", [foo]}],
@@ -16,7 +16,7 @@ reg_body_service_and_name_test() ->
 reg_body_service_port_and_ttl_test() ->
   ?assertEqual([{"ID", "test"}, {"Name", "test"}, {"Port", 8501},
                 {"Check", [{"Notes", ?CONSUL_CHECK_NOTES}, {"TTL", '45s'}]}],
-               autocluster_consul:registration_body("test", undefined, 8501, 45)).
+               autocluster_consul:registration_body("test", "undefined", 8501, 45)).
 
 reg_body_service_name_port_and_ttl_test() ->
   ?assertEqual([{"ID", "test"}, {"Name", "test"}, {"Port", 8501}, {"Tags", [foo]},

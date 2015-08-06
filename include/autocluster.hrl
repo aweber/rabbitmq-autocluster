@@ -17,7 +17,7 @@
          {config, consul_port,          "CONSUL_PORT",           8500,        integer},
          {config, consul_service,       "CONSUL_SERVICE",        "rabbitmq",  string},
          {config, consul_service_port,  "CONSUL_SERVICE_PORT",   5672,        integer},
-         {config, consul_service_prefix,"CONSUL_SERVICE_PREFIX", undefined,   string},
+         {config, consul_service_prefix,"CONSUL_SERVICE_PREFIX", "undefined", string},
          {config, consul_service_ttl,   "CONSUL_SERVICE_TTL",    30,          integer},
          {config, etcd_scheme,          "ETCD_SCHEME",           "http",      string},
          {config, etcd_host,            "ETCD_HOST",             "localhost", string},
