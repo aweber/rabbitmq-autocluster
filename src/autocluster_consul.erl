@@ -38,7 +38,7 @@ init() ->
         Interval  ->
           send_health_check_pass(),
           autocluster_log:info("Starting Consul Health Check TTL Timer"),
-          {ok, _} = timer:apply_interval(Interval * 1000, ?MODULE, send_health_check_pass, []),
+          {ok, _} = timer:apply_interval(Interval * 750, ?MODULE, send_health_check_pass, []),
           ok
       end;
     _ -> ok
@@ -51,8 +51,8 @@ init() ->
 %%
 nodelist() ->
   BaseArgs = case autocluster_config:get(cluster_name) of
-    undefined -> [passing];
-    Cluster   -> [passing, {tag, Cluster}]
+    "undefined" -> [passing];
+    Cluster     -> [passing, {tag, Cluster}]
   end,
   Args = case acl_args() of
     []  -> BaseArgs;
@@ -96,7 +96,7 @@ send_health_check_pass() ->
                              autocluster_config:get(consul_host),
                              autocluster_config:get(consul_port),
                              [v1, agent, check, pass, Service], []) of
-    ok -> ok;
+    {ok, []} -> ok;
     {error, Reason} ->
       autocluster_log:error("Error updating Consul health check: ~p", [Reason]),
       ok
@@ -126,20 +126,30 @@ unregister() ->
 %%
 acl_args() ->
   case autocluster_config:get(consul_acl) of
-    undefined -> [];
-    ACL -> [{acl, ACL}]
+    "undefined" -> [];
+    ACL         -> [{acl, ACL}]
   end.
 
 
 %% @private
-%% @spec extract_nodes(Data) -> list()
+%% @spec extract_nodes(list(), list()) -> list()
 %% @doc Take the list fo data as returned from the call to Consul and return it
 %%      as a properly formatted list of rabbitmq cluster identifier atoms.
 %% @end
 %%
-extract_nodes(Data) ->
-  Values = [proplists:lookup(<<"Node">>, N) || N <- [N || {struct, N} <- Data]],
-  [autocluster_util:node_name(Addr) || {_, Addr} <- Values].
+extract_nodes([], Nodes)    -> Nodes;
+extract_nodes([{struct, H}|T], Nodes) ->
+  {struct, V1} = proplists:get_value(<<"Node">>, H),
+  extract_nodes(T, lists:merge(Nodes, [autocluster_util:node_name(proplists:get_value(<<"Node">>, V1))])).
+
+
+%% @private
+%% @spec extract_nodes(list()) -> list()
+%% @doc Take the list fo data as returned from the call to Consul and return it
+%%      as a properly formatted list of rabbitmq cluster identifier atoms.
+%% @end
+%%
+extract_nodes(Data) -> extract_nodes(Data, []).
 
 
 %% @private
