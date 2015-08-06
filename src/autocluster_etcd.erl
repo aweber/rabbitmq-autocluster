@@ -14,7 +14,7 @@
 
 %% test_exports
 -export([base_path/0,
-         extract_nodes/2,
+         extract_nodes/1,
          get_node_from_key/1,
          node_path/0]).
 

@@ -6,11 +6,14 @@
 
 
 extract_nodes_test() ->
-  Values = [{struct, [{<<"key">>, <<"rabbitmq/default/foo">>}]},
-            {struct, [{<<"key">>, <<"rabbitmq/default/bar">>}]},
-            {struct, [{<<"key">>, <<"rabbitmq/default/baz">>}]}],
+  Values = {struct, [
+              {<<"node">>, {struct, [
+                {<<"nodes">>, [
+                  {struct, [{<<"key">>, <<"rabbitmq/default/foo">>}]},
+                  {struct, [{<<"key">>, <<"rabbitmq/default/bar">>}]},
+                  {struct, [{<<"key">>, <<"rabbitmq/default/baz">>}]}]}]}}]},
   Expectation = ["rabbit@foo", "rabbit@bar", "rabbit@baz"],
-  ?assertEqual(Expectation, autocluster_etcd:extract_nodes(Values, [])).
+  ?assertEqual(Expectation, autocluster_etcd:extract_nodes(Values)).
 
 base_path_test() ->
   autocluster_config_tests:reset_config(),
