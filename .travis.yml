@@ -1,32 +1,30 @@
 sudo: false
 language: erlang
 otp_release:
-  - 17.5
+- 17.5
 addons:
   apt:
     packages:
-      - xsltproc
+    - xsltproc
 env:
-  - BUILD_DIR=$HOME/rabbitmq-public-umbrella CONSUL_VERSION=0.5.2 RABBIT_TAG=v3_5_4
+- BUILD_DIR=$HOME/rabbitmq-public-umbrella CONSUL_VERSION=0.5.2 RABBIT_TAG=v3_5_4
 install:
-  - $TRAVIS_BUILD_DIR/travis-umbrella-setup.sh
-  - $TRAVIS_BUILD_DIR/travis-install-consul.sh
+- "$TRAVIS_BUILD_DIR/travis-umbrella-setup.sh"
+- "$TRAVIS_BUILD_DIR/travis-install-consul.sh"
 script: cd $BUILD_DIR/autocluster && make test
-after_script:
-  - rm -rf $BUILD_DIR/autocluster
 before_deploy:
-  - cd $BUILD_DIR/autocluster
-  - VERSION=$TRAVIS_TAG make
-deploy:
-  provider: releases
-  api_key:
-    secure: O24Nny5B1Xzs/tMW9qQrwIhvdaJ7gRc5moESXufCry7nlwunYSjCF/ukleZbL/ZjW4JwNHeUGCNvd0qX/fTx2IMzEkIBnxmYkWGfRNMeTZ9hKvmJiwML15BHCVPDxmw46ZMXPBKdDR46aXNJExuJ0QHUmT4FYvKUZdlHmk8rzvw=
-  file: $BUILD_DIR/autocluster/dist/autocluster-${TRAVIS_TAG}.ez
-  on:
-    tags: true
-    repo: aweber/rabbitmq-autocluster
+- cd $BUILD_DIR/autocluster
+- VERSION=$TRAVIS_TAG make
 cache:
   apt: true
   directories:
-    - $HOME/consul
-    - $BUILD_DIR
+  - "$HOME/consul"
+  - "$BUILD_DIR"
+deploy:
+  provider: releases
+  api_key:
+    secure: ktklMK+XMOteFt+m9NHhVqKkA1Wo8f9L/cJphUmBMgb3TS+4+vAU50yY8omIyprS8poc3mBWxjYD9p9xdeDnXY2tiFrLDKCWU/jbH3awD0uL6W0Di8BYAVOGhr2Jjjp6gi/B67wHtCtzEoSSNNfMMZ+RWf4GZjJ96NXOLhPRx4k=
+  file: "$BUILD_DIR/autocluster/dist/autocluster-${TRAVIS_TAG}.ez"
+  on:
+    tags: true
+    repo: aweber/rabbitmq-autocluster
