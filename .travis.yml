@@ -24,7 +24,7 @@ deploy:
   file: $BUILD_DIR/autocluster/dist/autocluster-${TRAVIS_TAG}.ez
   on:
     tags: true
-    repo: aweber/rabbitmq-autocluster-consul
+    repo: aweber/rabbitmq-autocluster
 cache:
   apt: true
   directories:
