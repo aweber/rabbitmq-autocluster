@@ -246,7 +246,7 @@ so that it works out of the box. Once copied, build the local image:
 
 .. code-block:: bash
 
-    docker build -t rabbitmq-autocluster /home/core/share/rabbitmq-autocluster/docker/
+    docker build -t rabbitmq-autocluster /home/core/share/autocluster/docker/
 
 Use the following docker command to start the first container:
 
