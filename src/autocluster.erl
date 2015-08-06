@@ -103,16 +103,26 @@ ensure_registered(Name, Module) ->
 
 
 %% @private
+%% @spec filter_dead_nodes([node()]) -> ok
+%% @doc Take the list of nodes specified by the backend and ensure they're pingable
+%% @end
+%%
+filter_dead_nodes(Nodes) ->
+  lists:filter(fun(N) -> net_adm:ping(list_to_atom(N)) =:= ping end, Nodes).
+
+
+%% @private
 %% @spec join_cluster([node()]) -> ok
 %% @doc Have the current node join a cluster using the specified discovery node
 %% @end
 %%
 join_cluster(Nodes) ->
-  autocluster_log:debug("Joining existing cluster: ~p", [Nodes]),
+  Alive = filter_dead_nodes(Nodes),
+  autocluster_log:debug("Joining existing cluster: ~p", [Alive]),
   application:stop(rabbit),
   mnesia:stop(),
   rabbit_mnesia:reset(),
-  rabbit_mnesia:join_cluster(lists:nth(1, Nodes), disc),
+  rabbit_mnesia:join_cluster(lists:nth(1, Alive), disc),
   mnesia:start(),
   rabbit:start(),
   autocluster_log:info("Cluster joined"),
