@@ -1,6 +1,13 @@
 #cloud-config
 coreos:
+  etcd2:
+    advertise-client-urls: http://$public_ipv4:2379
+    listen-client-urls: http://0.0.0.0:2379,http://0.0.0.0:4001
+
   units:
+    - name: etcd2.service
+      command: start
+
     - name: consul.service
       command: start
       content: |
@@ -32,10 +39,10 @@ write_files:
       #!/bin/bash
 
       if [ ! -f /opt/consul/bin/consul ]; then
-        curl -o /tmp/consul.zip -L https://dl.bintray.com/mitchellh/consul/0.5.0_linux_amd64.zip
+        curl -o /tmp/consul.zip -L https://dl.bintray.com/mitchellh/consul/0.5.2_linux_amd64.zip
         unzip /tmp/consul.zip -d /opt/consul/bin/
         chmod +x /opt/consul/consul
-        curl -L -o /tmp/webui.zip https://dl.bintray.com/mitchellh/consul/0.5.0_web_ui.zip
+        curl -L -o /tmp/webui.zip https://dl.bintray.com/mitchellh/consul/0.5.2_web_ui.zip
         mkdir /opt/consul/webui
         unzip /tmp/webui.zip -d /opt/consul/webui/
         rm /tmp/consul.zip /tmp/webui.zip
