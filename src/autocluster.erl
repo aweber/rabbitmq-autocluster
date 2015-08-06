@@ -64,6 +64,8 @@ ensure_registered() ->
 %%
 ensure_registered(consul) ->
   ensure_registered(consul, autocluster_consul);
+ensure_registered(etcd) ->
+  ensure_registered(etcd, autocluster_etcd);
 ensure_registered(Backend) ->
   autocluster_log:error("Unsupported backend: ~s", [Backend]),
   error.
