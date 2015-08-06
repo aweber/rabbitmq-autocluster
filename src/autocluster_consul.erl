@@ -181,12 +181,12 @@ registration_body() ->
 %% @doc Return a property list with the payload data structure for registration
 %% @end
 %%
-registration_body(Service, undefined, undefined, _) ->
+registration_body(Service, "undefined", undefined, _) ->
   [{"ID", Service}, {"Name", Service}];
 registration_body(Service, Name, undefined, _) ->
   [{"ID", Service}, {"Name", Service},
    {"Tags", [autocluster_util:as_atom(Name)]}];
-registration_body(Service, undefined, Port, TTL) ->
+registration_body(Service, "undefined", Port, TTL) ->
   [{"ID", Service}, {"Name", Service}, {"Port", Port},
    {"Check", [{"Notes", ?CONSUL_CHECK_NOTES}, {"TTL", ttl(TTL)}]}];
 registration_body(Service, Name, Port, TTL) ->
