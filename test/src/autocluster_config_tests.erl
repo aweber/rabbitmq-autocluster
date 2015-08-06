@@ -45,5 +45,5 @@ config_get_app_atom_value_test() ->
 
 config_get_os_atom_value_test() ->
   reset_config(),
-  os:putenv("RABBITMQ_LONGNAME", "true"),
+  os:putenv("RABBITMQ_USE_LONGNAME", "true"),
   ?assertEqual(true, autocluster_config:get(longname)).
