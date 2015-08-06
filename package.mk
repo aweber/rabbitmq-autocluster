@@ -1,3 +1,3 @@
 DEPS:=rabbitmq-server
 RELEASABLE:=true
-STANDALONE_TEST_COMMANDS:=eunit:test([rabbitmq_autocluster_consul_tests],[verbose])
+STANDALONE_TEST_COMMANDS:=autocluster_all_tests:run()

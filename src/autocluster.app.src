@@ -1,6 +1,6 @@
-{application, rabbitmq_autocluster_consul,
+{application, autocluster,
  [
-  {description, "Auto-clustering plugin using Consul"},
+  {description, "RabbitMQ Automatic Clustering Plugin"},
   {vsn, "%%VSN%%"},
   {env, []},
   {modules, []},

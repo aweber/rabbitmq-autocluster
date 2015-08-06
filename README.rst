@@ -1,30 +1,83 @@
-rabbitmq-autocluster-consul
-===========================
-An *experimental* RabbitMQ plugin that clusters nodes automatically using Consul.
+RabbitMQ Autocluster
+====================
+An RabbitMQ plugin that clusters nodes automatically using `Consul <https://consul.io>`_,
+`etcd2 <https://github.com/coreos/etcd>`_, or DNS for service discovery.
 
-.. image:: https://img.shields.io/travis/aweber/rabbitmq-autocluster-consul.svg
-    :target: https://travis-ci.org/aweber/rabbitmq-autocluster-consul
-.. image:: https://img.shields.io/github/release/aweber/rabbitmq-autocluster-consul.svg
-    :target: https://github.com/aweber/rabbitmq-autocluster-consul/releases
+.. image:: https://img.shields.io/travis/aweber/rabbitmq-autocluster.svg
+    :target: https://travis-ci.org/aweber/rabbitmq-autocluster
+.. image:: https://img.shields.io/github/release/aweber/rabbitmq-autocluster.svg
+    :target: https://github.com/aweber/rabbitmq-autocluster/releases
 
 Download
 --------
-Downloads of rabbitmq-autocluster-consul can be found on the
-`GitHub Releases <https://github.com/aweber/rabbitmq-autocluster-consul/releases>`_ page.
+Downloads of autocluster can be found on the
+`GitHub Releases <https://github.com/aweber/rabbitmq-autocluster/releases>`_ page.
 Check for version compatibility in the release notes.
 
 Installation
 ------------
-Place the  RabbitMQ plugins directory. Once
-extracted, run ``rabbitmq-plugins enable rabbitmq_autocluster_consul``.
+Place the plugin in the RabbitMQ plugins directory. To enable, run ``rabbitmq-plugins enable autocluster``.
 
 Configuration
 -------------
 Configuration for the plugin can be set in two places: operating system environment variables
-or the ``rabbitmq.config`` file under the ``rabbitmq_autocluster_consul`` stanza.
+or the ``rabbitmq.config`` file under the ``autocluster`` stanza.
 
 Settings
 ^^^^^^^^
+
+General
+```````
+The following settings apply to the general configuration of the plugin.
+
+**Backend Type**
+
+* Which type of service discovery backend to use. One of ``consul``, ``etcd``, or ``dns``.*
+
++----------------------+------------------------+
+| Environment Variable | ``AUTOCLUSTER_TYPE``   |
++----------------------+------------------------+
+| Setting Key          | ``backend``            |
++----------------------+------------------------+
+| Data type            | ``atom``               |
++----------------------+------------------------+
+| Default Value        | ``consul``             |
++----------------------+------------------------+
+
+**Long name Support**
+
+* When set to ``true`` this will cause RabbitMQ and the autocluster plugin to use fully
+qualified names to identify nodes.*
+
++----------------------+---------------------------+
+| Environment Variable | ``RABBITMQ_USE_LONGNAME`` |
++----------------------+---------------------------+
+| Setting Key          | ``longname``              |
++----------------------+---------------------------+
+| Data type            | ``bool`                   |
++----------------------+---------------------------+
+| Default Value        | ``false``                 |
++----------------------+---------------------------+
+
+**RabbitMQ Cluster Name**
+
+*A RabbitMQ cluster name to restrict the cluster membership to (optional). This only
+works with the Consul and etcd backends.*
+
++----------------------+-------------------------+
+| Environment Variable | ``CLUSTER_NAME``        |
++----------------------+-------------------------+
+| Setting Key          | ``cluster_name``        |
++----------------------+-------------------------+
+| Data type            | ``list``                |
++----------------------+-------------------------+
+| Default Value        | null                    |
++----------------------+-------------------------+
+
+Consul
+``````
+The following settings apply to the consul backend only.
+
 **Consul URL Scheme**
 
 *The URI scheme to use when connecting to Consul*
@@ -81,26 +134,12 @@ Settings
 | Default Value        | null                   |
 +----------------------+------------------------+
 
-**RabbitMQ Cluster Name**
-
-*A RabbitMQ cluster name to restrict the cluster membership to (optional)*
-
-+----------------------+-------------------------+
-| Environment Variable | ``CLUSTER_NAME``        |
-+----------------------+-------------------------+
-| Setting Key          | ``cluster_name``        |
-+----------------------+-------------------------+
-| Data type            | ``list``                |
-+----------------------+-------------------------+
-| Default Value        | null                    |
-+----------------------+-------------------------+
-
 **Consul Service Name**
 
 *The name of the service to register with Consul for automatic clustering*
 
 +----------------------+-------------------------+
-| Environment Variable | ``SERVICE_NAME``        |
+| Environment Variable | ``CONSUL_SERVICE``      |
 +----------------------+-------------------------+
 | Setting Key          | ``consul_service``      |
 +----------------------+-------------------------+
@@ -115,7 +154,7 @@ Settings
 for automatic clustering (optional)*
 
 +----------------------+---------------------------+
-| Environment Variable | ``SERVICE_PREFIX``        |
+| Environment Variable | ``CONSUL_SERVICE_PREFIX`` |
 +----------------------+---------------------------+
 | Setting Key          | ``consul_service_prefix`` |
 +----------------------+---------------------------+
@@ -130,7 +169,7 @@ for automatic clustering (optional)*
 service registration to double as a general RabbitMQ service registration*
 
 +----------------------+-------------------------+
-| Environment Variable | ``SERVICE_PORT``        |
+| Environment Variable | ``CONSUL_SERVICE_PORT`` |
 +----------------------+-------------------------+
 | Setting Key          | ``consul_service_port`` |
 +----------------------+-------------------------+
@@ -139,7 +178,8 @@ service registration to double as a general RabbitMQ service registration*
 | Default Value        | ``5672``                |
 +----------------------+-------------------------+
 
-.. note:: Set the ``SERVICE_PORT`` to an empty value to disable port announcement and health checking.  For example: ``SERVICE_PORT=""``
+.. note:: Set the ``SERVICE_PORT`` to an empty value to disable port announcement
+and health checking.  For example: ``SERVICE_PORT=""``
 
 **Consul Service TTL**
 
@@ -147,7 +187,7 @@ service registration to double as a general RabbitMQ service registration*
 know that RabbitMQ is alive an healthy.*
 
 +----------------------+-------------------------+
-| Environment Variable | ``SERVICE_TTL``         |
+| Environment Variable | ``CONSUL_SERVICE_TTL``  |
 +----------------------+-------------------------+
 | Setting Key          | ``consul_service_ttl``  |
 +----------------------+-------------------------+
@@ -156,11 +196,105 @@ know that RabbitMQ is alive an healthy.*
 | Default Value        | ``30``                  |
 +----------------------+-------------------------+
 
+dns
+```
+The following setting applies only to the DNS backend.
+
+**DNS Hostname**
+
+* The FQDN to use when the backend type is ``dns`` for looking up the RabbitMQ nodes to cluster
+via a DNS A record round-robin.*
+
++----------------------+------------------------+
+| Environment Variable | ``AUTOCLUSTER_HOST``   |
++----------------------+------------------------+
+| Setting Key          | ``autocluster_host``   |
++----------------------+------------------------+
+| Data type            | ``string``             |
++----------------------+------------------------+
+| Default Value        | ``consul``             |
++----------------------+------------------------+
+
+etcd
+````
+The following settings apply to the etcd backend only.
+
+**etcd URL Scheme**
+
+*The URI scheme to use when connecting to etcd*
+
++----------------------+------------------------+
+| Environment Variable | ``ETCD_SCHEME``        |
++----------------------+------------------------+
+| Setting Key          | ``etcd_scheme``        |
++----------------------+------------------------+
+| Data type            | ``list``               |
++----------------------+------------------------+
+| Default Value        | ``http``               |
++----------------------+------------------------+
+
+**etcd Host**
+
+*The hostname to use when connecting to etcd's API*
+
++----------------------+------------------------+
+| Environment Variable | ``ETCD_HOST``          |
++----------------------+------------------------+
+| Setting Key          | ``etcd_host``          |
++----------------------+------------------------+
+| Data type            | ``list``               |
++----------------------+------------------------+
+| Default Value        | ``localhost``          |
++----------------------+------------------------+
+
+**etcd Port**
+
+*The port to use when connecting to etcd's API*
+
++----------------------+------------------------+
+| Environment Variable | ``ETCD_PORT``          |
++----------------------+------------------------+
+| Setting Key          | ``etcd_port``          |
++----------------------+------------------------+
+| Data type            | ``int``                |
++----------------------+------------------------+
+| Default Value        | ``2379``               |
++----------------------+------------------------+
+
+**etcd Key Prefix**
+
+*The prefix used when storing cluster membership keys in etcd*
+
++----------------------+-------------------------+
+| Environment Variable | ``ETCD_PREFIX``         |
++----------------------+-------------------------+
+| Setting Key          | ``etcd_prefix``         |
++----------------------+-------------------------+
+| Data type            | ``list``                |
++----------------------+-------------------------+
+| Default Value        | ``rabbitmq``            |
++----------------------+-------------------------+
+
+**etcd Node TTL**
+
+*Used to specify how long a node can be down before it is removed from etcd's
+list of RabbitMQ nodes in the cluster*
+
++----------------------+-------------------------+
+| Environment Variable | ``ETCD_TTL``            |
++----------------------+-------------------------+
+| Setting Key          | ``etcd_ttl``            |
++----------------------+-------------------------+
+| Data type            | ``integer``             |
++----------------------+-------------------------+
+| Default Value        | ``30``                  |
++----------------------+-------------------------+
+
 *Exaple rabbitmq.config*
 
 ..  code-block:: erlang
 
-    [{rabbitmq_autocluster_consul,
+    [{autocluster,
       [
         {consul_host, "localhost"},
         {consul_port, 8500},
@@ -172,7 +306,7 @@ know that RabbitMQ is alive an healthy.*
 
 Building
 --------
-Steps to custom build a version of the ``rabbitmq-autocluster-consul`` plugin:
+Steps to custom build a version of the ``rabbitmq-autocluster`` plugin:
 
 .. code-block:: bash
 
@@ -180,8 +314,8 @@ Steps to custom build a version of the ``rabbitmq-autocluster-consul`` plugin:
     cd rabbitmq-public-umbrella
     make co
     make BRANCH=rabbitmq_v3_5_4 up_c
-    git clone https://github.com/aweber/rabbitmq-autocluster-consul.git
-    cd rabbitmq-autocluster-consul
+    git clone https://github.com/aweber/rabbitmq-autocluster.git
+    cd rabbitmq-autocluster
     make
 
 Test and Development Environment
@@ -197,7 +331,7 @@ the Consul UI at http://192.168.150.10:8500/ui/.
 
 The container is Ubuntu based and includes latest stable Erlang and RabbitMQ
 release installed. Pre-built containers for testing are available on Docker Hub under
-the ``aweber/rabbitmq-autocluster-consul`` tag.
+the ``aweber/rabbitmq-autocluster`` tag.
 
 Starting the Testing Environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -205,7 +339,7 @@ You can run the first container to get access to the management UI with:
 
 .. code-block:: bash
 
-    docker run -d -p 15672:15672 --dns 127.0.0.1 --dns-search node.rmq.consul aweber/rabbitmq-autocluster-consul
+    docker run -d -p 15672:15672 --dns 127.0.0.1 --dns-search node.rmq.consul aweber/rabbitmq-autocluster
 
 The RabbitMQ management UI will the be available at http://192.168.150.10:15672/ and
 you can login with the username/password combo of ``guest``/``guest``.
@@ -214,7 +348,7 @@ You can run subsequent containers with:
 
 .. code-block:: bash
 
-    docker run -d --dns 127.0.0.1 --dns-search node.rmq.consul aweber/rabbitmq-autocluster-consul
+    docker run -d --dns 127.0.0.1 --dns-search node.rmq.consul aweber/rabbitmq-autocluster
 
 Starting the Development Environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -224,28 +358,28 @@ and copy the plugin's ez file from ``dist`` to the project docker directory:
 .. code-block:: bash
 
     make
-    cp dist/rabbitmq_autocluster_consul-0.0.0.ez docker
+    cp dist/autocluster-0.0.0.ez docker
 
 The build artifact will be copied into the Docker image that is created and enabled
 so that it works out of the box. Once copied, build the local image:
 
 .. code-block:: bash
 
-    docker build -t rabbitmq-autocluster-consul /home/core/share/rabbitmq-autocluster-consul/docker/
+    docker build -t rabbitmq-autocluster /home/core/share/autocluster/docker/
 
 Use the following docker command to start the first container:
 
 .. code-block:: bash
 
     docker run -d -p 15672:15672 --dns 127.0.0.1 --dns-search node.rmq.consul \
-      -v /home/core/share:/opt/rabbitmq-public-umbrella rabbitmq-autocluster-consul
+      -v /home/core/share:/opt/rabbitmq-public-umbrella rabbitmq-autocluster
 
 And the following command for all subsequent containers:
 
 .. code-block:: bash
 
     docker run -d --dns 127.0.0.1 --dns-search node.rmq.consul \
-      -v /home/core/share:/opt/rabbitmq-public-umbrella rabbitmq-autocluster-consul
+      -v /home/core/share:/opt/rabbitmq-public-umbrella rabbitmq-autocluster
 
 The ``rabbitmq-public-umbrella`` directory is available under ``/opt/source`` in the container.
 
@@ -256,6 +390,6 @@ Development Notes
   RabbitMQ with ``supervisorctl stop rabbitmq``. Then you'll want to run RabbitMQ out of the
   ``/opt/source/rabbitmq-public-umbrella/rabbitmq-server`` directory by running
   ``make run``. Then you can do the same in each container you want to work with.
-- When you compile the source in the ``rabbitmq-autocluster-consul`` directory
+- When you compile the source in the ``rabbitmq-autocluster`` directory
   on your host machine, all of the containers will see the change in their
-  ``/opt/source/rabbitmq-public-umbrella/rabbitmq-autocluster-consul`` directory.
+  ``/opt/source/rabbitmq-public-umbrella/rabbitmq-autocluster`` directory.

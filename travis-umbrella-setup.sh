@@ -11,4 +11,5 @@ cd ${BUILD_DIR}
 git checkout -b rabbitmq_${RABBIT_TAG}
 git pull origin rabbitmq_${RABBIT_TAG}
 make co
-cp -r ${TRAVIS_BUILD_DIR} ${BUILD_DIR}/
+mkdir -p ${BUILD_DIR}/autocluster
+cp -r ${TRAVIS_BUILD_DIR}/* ${BUILD_DIR}/autocluster/
