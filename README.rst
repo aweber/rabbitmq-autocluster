@@ -293,17 +293,17 @@ autocluster will register itself as a configured logger with RabbitMQ if no log
 configuration for it exists. To configure logging for the plugin, you add it to
 the ``rabbit`` ``log_levels`` configuration like so:
 
-..  code-block:: erlang
+.. code-block:: erlang
 
-[{rabbit, [
-  {log_levels, [{autocluster, debug}, {connection, info}]}
-]}].
+    [{rabbit, [
+      {log_levels, [{autocluster, debug}, {connection, info}]}
+    ]}].
 
 Valid log levels are ``debug``, ``info``, ``warning``, and ``error``.
 
 Example rabbitmq.config
 ^^^^^^^^^^^^^^^^^^^^^^^
-..  code-block:: erlang
+.. code-block:: erlang
 
     [{autocluster,
       [
