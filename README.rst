@@ -25,7 +25,7 @@ or the ``rabbitmq.config`` file under the ``autocluster`` stanza.
 
 General Settings
 ^^^^^^^^^^^^^^^^
-The following settings apply to the general configuration of the plugin.
+The following settings apply to the general configuration of the plugin:
 
 **Backend Type**
 
@@ -286,6 +286,20 @@ list of RabbitMQ nodes in the cluster
 +----------------------+-------------------------+
 | Default Value        | ``30``                  |
 +----------------------+-------------------------+
+
+Logging
+^^^^^^^
+autocluster will register itself as a configured logger with RabbitMQ if no log
+configuration for it exists. To configure logging for the plugin, you add it to
+the ``rabbit`` ``log_levels`` configuration like so:
+
+..  code-block:: erlang
+
+[{rabbit, [
+  {log_levels, [{autocluster, debug}, {connection, info}]}
+]}].
+
+Valid log levels are ``debug``, ``info``, ``warning``, and ``error``.
 
 Example rabbitmq.config
 ^^^^^^^^^^^^^^^^^^^^^^^
