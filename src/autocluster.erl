@@ -22,6 +22,7 @@
 %% @end
 %%
 init() ->
+  autocluster_log:maybe_set_default_log_level(),
   application:ensure_started(inets),
   case ensure_registered() of
     {ok, DiscoveryNodes} -> ensure_clustered(DiscoveryNodes);
