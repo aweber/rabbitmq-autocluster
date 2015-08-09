@@ -299,7 +299,9 @@ the ``rabbit`` ``log_levels`` configuration like so:
       {log_levels, [{autocluster, debug}, {connection, info}]}
     ]}].
 
-Valid log levels are ``debug``, ``info``, ``warning``, and ``error``.
+Valid log levels are ``debug``, ``info``, ``warning``, and ``error``. For more
+information on configuring RabbitMQ logging, reference the ``log_levels`` key
+in the `RabbitMQ documentation <https://www.rabbitmq.com/configure.html>`_.
 
 Example rabbitmq.config
 ^^^^^^^^^^^^^^^^^^^^^^^
