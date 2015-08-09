@@ -44,7 +44,6 @@ maybe_set_default_log_level() ->
     {ok, Levels} ->
       case proplists:get_value(autocluster, Levels) of
         undefined ->
-          io:format("Setting default log settings"),
           set_log_levels(lists:append(Levels, [{autocluster, info}]));
         _ -> ok
       end
