@@ -147,6 +147,7 @@ extract_nodes(Miss) ->
 %% @doc Given an etcd key, return the erlang node name
 %% @end
 %%
+get_node_from_key(<<"/", V/binary>>) -> get_node_from_key(V);
 get_node_from_key(V) ->
   Path = string:concat(autocluster_httpc:build_path(lists:sublist(base_path(), 3, 2)), "/"),
   autocluster_util:node_name(string:substr(binary_to_list(V), length(Path))).

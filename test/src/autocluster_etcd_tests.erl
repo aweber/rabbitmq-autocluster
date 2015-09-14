@@ -22,6 +22,9 @@ base_path_test() ->
 get_node_from_key_test() ->
   ?assertEqual('rabbit@foo', autocluster_etcd:get_node_from_key(<<"rabbitmq/default/foo">>)).
 
+get_node_from_key_leading_slash_test() ->
+  ?assertEqual('rabbit@foo', autocluster_etcd:get_node_from_key(<<"/rabbitmq/default/foo">>)).
+
 node_path_test() ->
   autocluster_config_tests:reset_config(),
   [_, Node] = string:tokens(atom_to_list(node()), "@"),
