@@ -22,7 +22,7 @@
 %% @doc Return a list of nodes registered in Consul
 %% @end
 %%
-nodelist() -> [autocluster_util:node_name(N) || N <- build_node_list()].
+nodelist() -> {ok, [autocluster_util:node_name(N) || N <- build_node_list()]}.
 
 
 %% @spec register() -> ok|{error, Reason :: string()}
