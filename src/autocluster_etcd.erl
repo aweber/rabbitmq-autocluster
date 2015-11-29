@@ -31,7 +31,7 @@
 
 
 %% @spec init() -> ok
-%% @doc Kick of the Consul TTL health check pass timer
+%% @doc Kick off the etcd TTL health check pass timer
 %% @end
 %%
 init() ->
@@ -47,7 +47,7 @@ init() ->
 
 
 %% @spec nodelist() -> {ok, list()}|{error, Reason :: string()}
-%% @doc Return a list of nodes registered in Consul
+%% @doc Return a list of nodes registered in etcd
 %% @end
 %%
 nodelist() ->
@@ -79,11 +79,10 @@ register() -> ok.
 %%
 unregister() ->
   autocluster_log:info("Unregistering node with etcd"),
-  case autocluster_httpc:get(autocluster_config:get(consul_scheme),
-                             autocluster_config:get(consul_host),
-                             autocluster_config:get(consul_port),
-                             [v1, agent, service, deregister,
-                             autocluster_config:get(consul_service)], acl_args) of
+  case autocluster_httpc:delete(autocluster_config:get(etcd_scheme),
+                                autocluster_config:get(etcd_host),
+                                autocluster_config:get(etcd_port),
+                                node_path(), [{recursive, true}], []) of
     {ok, _} -> ok;
     Error   -> Error
   end.
@@ -97,10 +96,10 @@ set_etcd_node_key() ->
   autocluster_log:debug("Updated node registration with etcd"),
   Interval = autocluster_config:get(etcd_node_ttl),
   case autocluster_httpc:put(autocluster_config:get(etcd_scheme),
-                              autocluster_config:get(etcd_host),
-                              autocluster_config:get(etcd_port),
-                              node_path(), [{ttl, Interval}],
-                              "value=enabled") of
+                             autocluster_config:get(etcd_host),
+                             autocluster_config:get(etcd_port),
+                             node_path(), [{ttl, Interval}],
+                             "value=enabled") of
     {ok, _} -> ok;
     Error   -> Error
   end.
@@ -160,9 +159,9 @@ get_node_from_key(V) ->
 make_etcd_directory() ->
   autocluster_log:info("Creating etcd base path"),
   case autocluster_httpc:put(autocluster_config:get(etcd_scheme),
-                              autocluster_config:get(etcd_host),
-                              autocluster_config:get(etcd_port),
-                              base_path(), [{dir, true}], []) of
+                             autocluster_config:get(etcd_host),
+                             autocluster_config:get(etcd_port),
+                             base_path(), [{dir, true}], []) of
     {ok, _} -> ok;
     Error   -> Error
   end.
