@@ -1,0 +1,7 @@
+# top-most EditorConfig file
+root = true
+
+[Makefile]
+tab_width   = 8
+indent_size = 2
+indent_style = tab
