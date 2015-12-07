@@ -1,6 +1,6 @@
 #!/bin/bash
 BUILD_DIR=${BUILD_DIR:-${HOME}/rabbitmq-public-umbrella}
-RABBIT_TAG=${RABBIT_TAG:-v3_5_6}
+RABBIT_TAG=${RABBIT_TAG:-rabbitmq_v3_5_6}
 echo "Build dir: ${BUILD_DIR}"
 echo "Travis build dir: ${TRAVIS_BUILD_DIR}"
 git clone https://github.com/rabbitmq/rabbitmq-public-umbrella.git ${BUILD_DIR}

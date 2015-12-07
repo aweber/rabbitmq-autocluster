@@ -7,7 +7,7 @@ addons:
     packages:
       - xsltproc
 env:
-  - BUILD_DIR=$HOME/rabbitmq-public-umbrella CONSUL_VERSION=0.5.2 RABBIT_TAG=v3_5_6
+  - BUILD_DIR=$HOME/rabbitmq-public-umbrella CONSUL_VERSION=0.5.2 RABBIT_TAG=rabbitmq_v3_5_6
 install:
   - "$TRAVIS_BUILD_DIR/travis-umbrella-setup.sh"
   - "$TRAVIS_BUILD_DIR/travis-install-consul.sh"
