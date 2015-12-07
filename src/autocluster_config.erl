@@ -17,14 +17,13 @@
 get(Key) ->
   case lists:keysearch(Key, #config.key, ?CONFIG_MAP) of
     {value, Config} ->
-      Value = getenv(Config#config.os, Key, Config#config.default),
-      case Config#config.type of
-        atom    -> autocluster_util:as_atom(Value);
-        string  -> autocluster_util:as_string(Value);
-        integer -> autocluster_util:as_integer(Value)
-      end;
+      normalize(Config,
+                getenv(Config#config.os,
+                       Key,
+                       Config#config.default));
     false -> false
   end.
+
 
 %% @private
 %% @spec getenv(list(), list(), list()) -> list()
@@ -37,3 +36,14 @@ getenv(OS, App, Default) ->
     false -> application:get_env(autocluster, App, Default);
     Value -> Value
   end.
+
+
+%% @private
+%% @spec normalize(list(), mixed) -> atom()|string()|integer()
+%% @doc Return the normalized value in as the proper data type
+%% @end
+%%
+normalize(Config, Value) when Config#config.is_port =:= true -> autocluster_util:parse_port(Value);
+normalize(Config, Value) when Config#config.type =:= atom -> autocluster_util:as_atom(Value);
+normalize(Config, Value) when Config#config.type =:= integer -> autocluster_util:as_integer(Value);
+normalize(Config, Value) when Config#config.type =:= string -> autocluster_util:as_string(Value).

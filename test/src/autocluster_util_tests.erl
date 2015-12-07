@@ -41,4 +41,11 @@ node_name_lname_test() ->
   application:set_env(autocluster, longname, true),
   ?assertEqual('rabbit@node3.foo.bar', autocluster_util:node_name("node3.foo.bar")).
 
+parse_port_base_test() ->
+  ?assertEqual(42, autocluster_util:parse_port("42")).
 
+parse_port_integer_test() ->
+  ?assertEqual(42, autocluster_util:parse_port(42)).
+
+parse_port_uri_test() ->
+  ?assertEqual(42, autocluster_util:parse_port("tcp://localhost:42")).

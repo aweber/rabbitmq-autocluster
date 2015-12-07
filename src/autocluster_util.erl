@@ -9,7 +9,8 @@
 -export([as_atom/1,
          as_integer/1,
          as_string/1,
-         node_name/1]).
+         node_name/1,
+         parse_port/1]).
 
 
 %% @spec as_atom(Value) -> list()
@@ -68,3 +69,11 @@ node_name(Value) ->
       end
   end,
   list_to_atom(string:join(["rabbit", Host], "@")).
+
+
+%% @spec parse_port(mixed) -> integer()
+%% @doc Returns the port, even if Docker linking overwrites a configuration value to be a URI instead of numeric value
+%% @end
+%%
+parse_port(Value) when is_list(Value) -> as_integer(lists:last(string:tokens(Value, ":")));
+parse_port(Value) -> as_integer(Value).
