@@ -6,7 +6,7 @@ echo "Travis build dir: ${TRAVIS_BUILD_DIR}"
 git clone https://github.com/rabbitmq/rabbitmq-public-umbrella.git ${BUILD_DIR}
 cd ${BUILD_DIR}
 make co
-make BRANCH=${RABBIT_TAG} up_c
+make BRANCH=${RABBIT_TAG} up
 if [ -d ${BUILD_DIR}/autocluster ]; then
     rm -rf ${BUILD_DIR}/autocluster
 fi
