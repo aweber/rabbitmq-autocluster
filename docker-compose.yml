@@ -1,0 +1,21 @@
+consul:
+  image: gavinmroy/alpine-consul:0.5.2-0
+  ports:
+    - 8300:8300
+    - 8301:8301
+    - 8301:8301/udp
+    - 8302:8302/udp
+    - 8400:8400
+    - 8500:8500
+
+rabbitmq:
+  image: gavinmroy/alpine-rabbitmq-autocluster
+  links:
+    - consul
+  ports:
+    - 4369
+    - 5671
+    - 5672
+    - 15672
+    - 25672
+
