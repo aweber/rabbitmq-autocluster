@@ -147,6 +147,26 @@ put(Scheme, Host, Port, Path, Args, Body) ->
   parse_response(Response).
 
 
+%% @public
+%% @spec delete(Scheme, Host, Port, Path, Args, Body) -> Result
+%% @where Scheme = string(),
+%%        Host   = string(),
+%%        Port   = integer(),
+%%        Path   = string(),
+%%        Args   = proplist(),
+%%        Body   = string(),
+%%        Result = {ok, mixed}|{error, Reason::string()}
+%% @doc Perform a HTTP DELETE request
+%% @end
+%%
+delete(Scheme, Host, Port, Path, Args, Body) ->
+  URL = build_uri(Scheme, Host, Port, Path, Args),
+  autocluster_log:debug("DELETE ~s [~p]", [URL, Body]),
+  Response = httpc:request(delete, {URL, [], ?CONTENT_URLENCODED, Body}, [], []),
+  autocluster_log:debug("Response: [~p]", [Response]),
+  parse_response(Response).
+
+
 %% @private
 %% @spec decode_body(mixed) -> list()
 %% @doc Decode the response body and return a list
