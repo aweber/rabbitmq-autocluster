@@ -155,11 +155,12 @@ extract_nodes(Data) -> extract_nodes(Data, []).
 %% @end
 %%
 registration_body() ->
-  {Service, Name, Port, TTL} = {autocluster_config:get(consul_service),
-                                autocluster_config:get(cluster_name),
-                                autocluster_config:get(consul_service_port),
-                                autocluster_config:get(consul_service_ttl)},
-  Payload = registration_body(list_to_atom(Service), Name, Port, TTL),
+  {Service, Name, Address, Port, TTL} = {autocluster_config:get(consul_service),
+                                         autocluster_config:get(cluster_name),
+                                         autocluster_config:get(consul_service_address),
+                                         autocluster_config:get(consul_service_port),
+                                         autocluster_config:get(consul_service_ttl)},
+  Payload = registration_body(list_to_atom(Service), Name, Address, Port, TTL),
   case rabbit_misc:json_encode(Payload) of
     {ok, Body} ->
       lists:flatten(Body);
@@ -170,27 +171,39 @@ registration_body() ->
 
 
 %% @private
-%% @spec registration_body(Service, Name, Port, TTL) -> proplist()
+%% @spec registration_body(Service, Address, Name, Port, TTL) -> proplist()
 %% @where Service = string()
 %%        Name = mixed
+%%        Address = string()|undefined
 %%        Port = integer()|undefined
 %%        TTL = integer()|undefined
 %% @doc Return a property list with the payload data structure for registration
 %% @end
 %%
-registration_body(Service, "undefined", undefined, _) ->
+registration_body(Service, "undefined", "undefined", undefined, _) ->
   [{"ID", Service}, {"Name", Service}];
-registration_body(Service, Name, undefined, _) ->
+registration_body(Service, Name, "undefined", undefined, _) ->
   [{"ID", Service}, {"Name", Service},
    {"Tags", [autocluster_util:as_atom(Name)]}];
-registration_body(Service, "undefined", Port, TTL) ->
+registration_body(Service, "undefined", "undefined", Port, TTL) ->
   [{"ID", Service}, {"Name", Service}, {"Port", Port},
    {"Check", [{"Notes", ?CONSUL_CHECK_NOTES}, {"TTL", ttl(TTL)}]}];
-registration_body(Service, Name, Port, TTL) ->
+registration_body(Service, Name, "undefined", Port, TTL) ->
   [{"ID", Service}, {"Name", Service}, {"Port", Port},
    {"Tags", [autocluster_util:as_atom(Name)]},
+   {"Check", [{"Notes", ?CONSUL_CHECK_NOTES}, {"TTL", ttl(TTL)}]}];
+registration_body(Service, "undefined", Address, undefined, _) ->
+  [{"ID", Service}, {"Name", Service}, {"Address", Address}];
+registration_body(Service, Name, Address, undefined, _) ->
+  [{"ID", Service}, {"Name", Service}, {"Address", Address},
+   {"Tags", [autocluster_util:as_atom(Name)]}];
+registration_body(Service, Name, Address, PORT, _) ->
+  [{"ID", Service}, {"Name", Service}, {"Address", Address}, {"Port", Port},
+   {"Tags", [autocluster_util:as_atom(Name)]}];
+registration_body(Service, Name, Address, PORT, TTL) ->
+  [{"ID", Service}, {"Name", Service}, {"Address", Address}, {"Port", Port},
+   {"Tags", [autocluster_util:as_atom(Name)]},
    {"Check", [{"Notes", ?CONSUL_CHECK_NOTES}, {"TTL", ttl(TTL)}]}].
-
 
 %% @private
 %% @spec ttl(integer()) -> atom()
