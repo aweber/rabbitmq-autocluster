@@ -56,6 +56,20 @@ qualified names to identify nodes.
 | Default Value        | ``false``                 |
 +----------------------+---------------------------+
 
+**Fail on error Support**
+
+When set to ``true`` this will cause newly joining RabbitMQ node fail to start on error when registering node with consul, etcd, or dns, or joining existing cluster. *(optional)*
+
++----------------------+------------------------------+
+| Environment Variable | ``AUTOCLUSTER_FAIL_ONERROR`` |
++----------------------+------------------------------+
+| Setting Key          | ``longname``                 |
++----------------------+------------------------------+
+| Data type            | ``bool``                     |
++----------------------+------------------------------+
+| Default Value        | ``false``                    |
++----------------------+------------------------------+
+
 **RabbitMQ Cluster Name**
 
 A RabbitMQ cluster name to restrict the cluster membership to (optional). This only

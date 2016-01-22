@@ -28,7 +28,10 @@ init() ->
     {ok, DiscoveryNodes} -> ensure_clustered(DiscoveryNodes);
     error ->
       autocluster_log:info("Error in ensuring clustered"),
-      ok
+      case autocluster_config:get(fail_onerror) of
+        true -> error;
+        false -> ok
+      end
   end.
 
 
@@ -134,7 +137,10 @@ join_cluster(Nodes) ->
     [] ->
       autocluster_log:warning("Can not communicate with cluster nodes: ~p",
         [Nodes]),
-      ok;
+      case autocluster_config:get(fail_onerror) of
+        true -> error;
+        false -> ok
+      end;
     Alive ->
       autocluster_log:debug("Joining existing cluster: ~p", [Alive]),
       application:stop(rabbit),
