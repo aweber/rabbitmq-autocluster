@@ -55,6 +55,6 @@ config_docker_screws_with_envvar_test() ->
 
 config_get_os_atom_value_test() ->
   reset_config(),
-  os:putenv("AUTOCLUSTER_FAIL_ONERROR", "true"),
-  ?assertEqual(true, autocluster_config:get(fail_onerror)).
+  os:putenv("AUTOCLUSTER_CLUSTER_FORMATION_FAILURE_MODE", "stop"),
+  ?assertEqual(stop, autocluster_config:get(cluster_formation_failure_mode)).
 

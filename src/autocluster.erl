@@ -28,9 +28,9 @@ init() ->
     {ok, DiscoveryNodes} -> ensure_clustered(DiscoveryNodes);
     error ->
       autocluster_log:info("Error in ensuring clustered"),
-      case autocluster_config:get(fail_onerror) of
-        true -> error;
-        false -> ok
+      case autocluster_config:get(cluster_formation_failure_mode) of
+        "stop" -> error;
+        "ignore" -> ok
       end
   end.
 
@@ -137,9 +137,9 @@ join_cluster(Nodes) ->
     [] ->
       autocluster_log:warning("Can not communicate with cluster nodes: ~p",
         [Nodes]),
-      case autocluster_config:get(fail_onerror) of
-        true -> error;
-        false -> ok
+      case autocluster_config:get(cluster_formation_failure_mode) of
+        "stop" -> error;
+        "ignore" -> ok
       end;
     Alive ->
       autocluster_log:debug("Joining existing cluster: ~p", [Alive]),
