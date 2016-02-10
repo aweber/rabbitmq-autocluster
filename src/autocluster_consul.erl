@@ -22,7 +22,7 @@
                     {requires,    notify_cluster}]}).
 
 %% For testing only
--export([registration_body/4, ttl/1]).
+-export([registration_body/5, ttl/1]).
 
 -include("autocluster.hrl").
 
@@ -197,10 +197,10 @@ registration_body(Service, "undefined", Address, undefined, _) ->
 registration_body(Service, Name, Address, undefined, _) ->
   [{"ID", Service}, {"Name", Service}, {"Address", Address},
    {"Tags", [autocluster_util:as_atom(Name)]}];
-registration_body(Service, Name, Address, PORT, _) ->
+registration_body(Service, Name, Address, Port, _) ->
   [{"ID", Service}, {"Name", Service}, {"Address", Address}, {"Port", Port},
    {"Tags", [autocluster_util:as_atom(Name)]}];
-registration_body(Service, Name, Address, PORT, TTL) ->
+registration_body(Service, Name, Address, Port, TTL) ->
   [{"ID", Service}, {"Name", Service}, {"Address", Address}, {"Port", Port},
    {"Tags", [autocluster_util:as_atom(Name)]},
    {"Check", [{"Notes", ?CONSUL_CHECK_NOTES}, {"TTL", ttl(TTL)}]}].
