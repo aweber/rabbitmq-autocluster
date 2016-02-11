@@ -330,3 +330,4 @@ Steps to custom build a version of the ``rabbitmq-autocluster`` plugin:
     git clone https://github.com/aweber/rabbitmq-autocluster.git
     cd rabbitmq-autocluster
     make
+
