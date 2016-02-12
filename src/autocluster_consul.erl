@@ -22,7 +22,7 @@
                     {requires,    notify_cluster}]}).
 
 %% For testing only
--export([registration_body/4, ttl/1]).
+-export([registration_body/6, ttl/1, full_service_id/2]).
 
 -include("autocluster.hrl").
 
@@ -62,7 +62,9 @@ nodelist() ->
                              autocluster_config:get(consul_port),
                              [v1, health, service, autocluster_config:get(consul_service)],
                              Args) of
-    {ok, Nodes} -> {ok, extract_nodes(Nodes)};
+    {ok, Nodes} ->
+      autocluster_log:info("autocluster_httpc:get got ~p", [Nodes]),
+      {ok, extract_nodes(Nodes)};
     Error       -> Error
   end.
 
@@ -88,8 +90,12 @@ register() ->
 %% @end
 %%
 send_health_check_pass() ->
-  Service = autocluster_util:as_atom(string:join(["service",
-                                                  autocluster_config:get(consul_service)], ":")),
+  {Prefix, Srv, TTL} = {autocluster_config:get(consul_service_prefix),
+                   autocluster_config:get(consul_service),
+                   autocluster_config:get(consul_service_ttl)},
+
+  SrvID = full_service_id(Prefix, Srv),
+  Service = autocluster_util:as_atom(lists:concat(["service", ':', SrvID])),
   case autocluster_httpc:get(autocluster_config:get(consul_scheme),
                              autocluster_config:get(consul_host),
                              autocluster_config:get(consul_port),
@@ -106,11 +112,14 @@ send_health_check_pass() ->
 %% @end
 %%
 unregister() ->
+  {Prefix, Srv} = {autocluster_config:get(consul_service_prefix),
+                   autocluster_config:get(consul_service)},
+
+  SrvID = full_service_id(Prefix, Srv),
   case autocluster_httpc:get(autocluster_config:get(consul_scheme),
                              autocluster_config:get(consul_host),
                              autocluster_config:get(consul_port),
-                             [v1, agent, service, deregister,
-                             autocluster_config:get(consul_service)], acl_args) of
+                             [v1, agent, service, deregister, SrvID], acl_args) of
     {ok, _} -> ok;
     Error   -> Error
   end.
@@ -136,9 +145,8 @@ acl_args() ->
 %%
 extract_nodes([], Nodes)    -> Nodes;
 extract_nodes([{struct, H}|T], Nodes) ->
-  {struct, V1} = proplists:get_value(<<"Node">>, H),
-  extract_nodes(T, lists:merge(Nodes, [autocluster_util:node_name(proplists:get_value(<<"Node">>, V1))])).
-
+  {struct, V1} = proplists:get_value(<<"Service">>, H),
+  extract_nodes(T, lists:merge(Nodes, [autocluster_util:node_name(proplists:get_value(<<"Address">>, V1))])).
 
 %% @private
 %% @spec extract_nodes(list()) -> list()
@@ -155,12 +163,14 @@ extract_nodes(Data) -> extract_nodes(Data, []).
 %% @end
 %%
 registration_body() ->
-  {Service, Name, Address, Port, TTL} = {autocluster_config:get(consul_service),
-                                         autocluster_config:get(cluster_name),
-                                         autocluster_config:get(consul_service_address),
-                                         autocluster_config:get(consul_service_port),
-                                         autocluster_config:get(consul_service_ttl)},
-  Payload = registration_body(list_to_atom(Service), Name, Address, Port, TTL),
+  {Prefix, Service, Name, Address, Port, TTL} = {autocluster_config:get(consul_service_prefix),
+                                                 autocluster_config:get(consul_service),
+                                                 autocluster_config:get(cluster_name),
+                                                 autocluster_config:get(consul_service_address),
+                                                 autocluster_config:get(consul_service_port),
+                                                 autocluster_config:get(consul_service_ttl)},
+  SrvID = full_service_id(Prefix, Service),
+  Payload = registration_body(SrvID, list_to_atom(Service), Name, Address, Port, TTL),
   case rabbit_misc:json_encode(Payload) of
     {ok, Body} ->
       lists:flatten(Body);
@@ -169,10 +179,21 @@ registration_body() ->
       {error, Error}
   end.
 
-
 %% @private
-%% @spec registration_body(Service, Address, Name, Port, TTL) -> proplist()
-%% @where Service = string()
+%% @spec full_service_id(string(), string()) -> atom()
+%% @doc Consul requires ServiceID to be unique per the actual registered service instance.
+full_service_id("undefined", Service) ->
+  autocluster_util:as_atom(Service);
+
+full_service_id(undefined, Service) ->
+  autocluster_util:as_atom(Service);
+
+full_service_id(Prefix, Service) ->
+  autocluster_util:as_atom(lists:concat([Prefix, '-', Service])).
+%% @private
+%% @spec registration_body(SrvID, Service, Address, Name, Port, TTL) -> proplist()
+%% @where SrvID = atom()
+%%        Service = string()
 %%        Name = mixed
 %%        Address = string()|undefined
 %%        Port = integer()|undefined
@@ -180,28 +201,31 @@ registration_body() ->
 %% @doc Return a property list with the payload data structure for registration
 %% @end
 %%
-registration_body(Service, "undefined", "undefined", undefined, _) ->
-  [{"ID", Service}, {"Name", Service}];
-registration_body(Service, Name, "undefined", undefined, _) ->
-  [{"ID", Service}, {"Name", Service},
+registration_body(SrvID, Service, "undefined", "undefined", undefined, _) ->
+  [{"ID", SrvID}, {"Name", Service}];
+
+registration_body(SrvID, Service, Name, "undefined", undefined, _) ->
+  [{"ID", SrvID}, {"Name", Service},
    {"Tags", [autocluster_util:as_atom(Name)]}];
-registration_body(Service, "undefined", "undefined", Port, TTL) ->
-  [{"ID", Service}, {"Name", Service}, {"Port", Port},
+
+registration_body(SrvID, Service, "undefined", "undefined", Port, TTL) ->
+  [{"ID", SrvID}, {"Name", Service}, {"Port", Port},
    {"Check", [{"Notes", ?CONSUL_CHECK_NOTES}, {"TTL", ttl(TTL)}]}];
-registration_body(Service, Name, "undefined", Port, TTL) ->
-  [{"ID", Service}, {"Name", Service}, {"Port", Port},
+
+registration_body(SrvID, Service, Name, "undefined", Port, TTL) ->
+  [{"ID", SrvID}, {"Name", Service}, {"Port", Port},
    {"Tags", [autocluster_util:as_atom(Name)]},
    {"Check", [{"Notes", ?CONSUL_CHECK_NOTES}, {"TTL", ttl(TTL)}]}];
-registration_body(Service, "undefined", Address, undefined, _) ->
-  [{"ID", Service}, {"Name", Service}, {"Address", Address}];
-registration_body(Service, Name, Address, undefined, _) ->
-  [{"ID", Service}, {"Name", Service}, {"Address", Address},
+
+registration_body(SrvID, Service, "undefined", Address, undefined, _) ->
+  [{"ID", SrvID}, {"Name", Service}, {"Address", autocluster_util:as_atom(Address)}];
+
+registration_body(SrvID, Service, Name, Address, undefined, _) ->
+  [{"ID", SrvID}, {"Name", Service}, {"Address", autocluster_util:as_atom(Address)},
    {"Tags", [autocluster_util:as_atom(Name)]}];
-registration_body(Service, Name, Address, PORT, _) ->
-  [{"ID", Service}, {"Name", Service}, {"Address", Address}, {"Port", Port},
-   {"Tags", [autocluster_util:as_atom(Name)]}];
-registration_body(Service, Name, Address, PORT, TTL) ->
-  [{"ID", Service}, {"Name", Service}, {"Address", Address}, {"Port", Port},
+
+registration_body(SrvID, Service, Name, Address, Port, TTL) ->
+  [{"ID", SrvID}, {"Name", Service}, {"Address", autocluster_util:as_atom(Address)}, {"Port", Port},
    {"Tags", [autocluster_util:as_atom(Name)]},
    {"Check", [{"Notes", ?CONSUL_CHECK_NOTES}, {"TTL", ttl(TTL)}]}].
 
