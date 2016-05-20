@@ -146,8 +146,13 @@ acl_args() ->
 extract_nodes([], Nodes)    -> Nodes;
 extract_nodes([{struct, H}|T], Nodes) ->
   {struct, V1} = proplists:get_value(<<"Service">>, H),
-  extract_nodes(T, lists:merge(Nodes, [autocluster_util:node_name(proplists:get_value(<<"Address">>, V1))])).
-
+  case autocluster_util:as_string(proplists:get_value(<<"Address">>, V1)) of
+    "" ->
+      {struct, V2} = proplists:get_value(<<"Node">>, H),
+      extract_nodes(T, lists:merge(Nodes, [autocluster_util:node_name(proplists:get_value(<<"Node">>, V2))]));
+    _ ->
+      extract_nodes(T, lists:merge(Nodes, [autocluster_util:node_name(proplists:get_value(<<"Address">>, V1))]))
+  end.
 %% @private
 %% @spec extract_nodes(list()) -> list()
 %% @doc Take the list fo data as returned from the call to Consul and return it
