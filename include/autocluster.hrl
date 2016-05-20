@@ -10,6 +10,7 @@
         [{config, backend,               "AUTOCLUSTER_TYPE",      consul,      atom,    false},
          {config, autocluster_host,      "AUTOCLUSTER_HOST",      "undefined", string,  false},
          {config, longname,              "RABBITMQ_USE_LONGNAME", false,       atom,    false},
+         {config, cluster_formation_failure_mode, "AUTOCLUSTER_CLUSTER_FORMATION_FAILURE_MODE", "ignore", string, false},
          {config, node_type,             "RABBITMQ_NODE_TYPE",    disc,        atom,    false},
          {config, cluster_name,          "CLUSTER_NAME",          "undefined", string,  false},
          {config, consul_acl,            "CONSUL_ACL",            "undefined", string,  false},

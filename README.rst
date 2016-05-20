@@ -56,6 +56,20 @@ qualified names to identify nodes.
 | Default Value        | ``false``                 |
 +----------------------+---------------------------+
 
+**Fail on error Support**
+
+When set to ``stop`` this will cause newly joining RabbitMQ node stop on error when registering node with consul, etcd, or dns, or joining existing cluster. Valid values are ``stop`` and ``ignore`` *(optional)*
+
++----------------------+------------------------------------------------+
+| Environment Variable | ``AUTOCLUSTER_CLUSTER_FORMATION_FAILURE_MODE`` |
++----------------------+------------------------------------------------+
+| Setting Key          | ``cluster_formation_failure_mode``             |
++----------------------+------------------------------------------------+
+| Data type            | ``string``                                     |
++----------------------+------------------------------------------------+
+| Default Value        | ``ignore``                                     |
++----------------------+------------------------------------------------+
+
 **RabbitMQ Cluster Name**
 
 A RabbitMQ cluster name to restrict the cluster membership to (optional). This only
