@@ -133,7 +133,7 @@ unregister() ->
 acl_args() ->
   case autocluster_config:get(consul_acl) of
     "undefined" -> [];
-    ACL         -> [{acl, ACL}]
+    ACL         -> [{token, ACL}]
   end.
 
 
