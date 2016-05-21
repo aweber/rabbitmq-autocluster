@@ -9,8 +9,8 @@ otp_release:
 cache:
   apt: true
 before_script:
-- "ps aux |grep [r]abbit"
-- sudo service rabbitmq stop
+- ((ps aux |grep [r]abbit) || /bin/true)
+- ((sudo service rabbitmq stop) || /bin/true)
 - (test "$TRAVIS_TAG" && git checkout "$TRAVIS_TAG") || (test "$TRAVIS_BRANCH" && git checkout "$TRAVIS_BRANCH")
 script: make test
 deploy:
