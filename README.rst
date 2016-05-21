@@ -1,6 +1,6 @@
 RabbitMQ Autocluster
 ====================
-An RabbitMQ plugin that clusters nodes automatically using `Consul <https://consul.io>`_,
+A RabbitMQ plugin that clusters nodes automatically using `Consul <https://consul.io>`_,
 `etcd2 <https://github.com/coreos/etcd>`_, DNS, `AWS EC2 tags <http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html>`_
 or `AWS Autoscaling Groups <https://aws.amazon.com/autoscaling/>`_ for service discovery.
 
