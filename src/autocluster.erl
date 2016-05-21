@@ -62,6 +62,7 @@ ensure_registered(Backend) ->
 %% @end
 %%
 ensure_registered(Name, Module) ->
+  autocluster_log:info("Starting ~p registration.", [Name]),
   Nodes = Module:nodelist(),
   maybe_register(Nodes, Name, Module).
 
@@ -264,5 +265,5 @@ maybe_delay_startup() ->
 startup_delay(0) -> ok;
 startup_delay(Max) ->
   Duration = random:uniform(Max),
-  autocluster_log:debug("Sleeping for ~p seconds~n", [Duration]),
+  autocluster_log:info("Delaying startup for ~pms.~n", [Duration]),
   timer:sleep(Duration).

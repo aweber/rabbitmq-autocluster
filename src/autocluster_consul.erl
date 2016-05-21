@@ -36,7 +36,7 @@ init() ->
       case autocluster_config:get(consul_service_ttl) of
         undefined -> ok;
         Interval  ->
-          autocluster_log:info("Starting Consul Health Check TTL Timer"),
+          autocluster_log:debug("Starting Consul Health Check TTL Timer"),
           {ok, _} = timer:apply_interval(Interval * 500, ?MODULE, send_health_check_pass, []),
           ok
       end;
@@ -63,7 +63,7 @@ nodelist() ->
                              [v1, health, service, autocluster_config:get(consul_service)],
                              Args) of
     {ok, Nodes} ->
-      autocluster_log:info("autocluster_httpc:get got ~p", [Nodes]),
+      autocluster_log:debug("autocluster_httpc:get got ~p", [Nodes]),
       {ok, extract_nodes(Nodes)};
     Error       -> Error
   end.
@@ -102,7 +102,7 @@ send_health_check_pass() ->
                              [v1, agent, check, pass, Service], []) of
     {ok, []} -> ok;
     {error, Reason} ->
-      autocluster_log:error("Error updating Consul health check: ~p", [Reason]),
+      autocluster_log:debug("Error updating Consul health check: ~p", [Reason]),
       ok
   end.
 
