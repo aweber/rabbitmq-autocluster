@@ -13,7 +13,7 @@ otp_release:
 cache:
   apt: true
 before_script:
-- rabbitmqctl stop
+- rabbitmqctl status
 script: make test
 deploy:
   provider: releases
