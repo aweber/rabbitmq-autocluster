@@ -1,6 +1,6 @@
 %%==============================================================================
 %% @author Gavin M. Roy <gavinr@aweber.com>
-%% @copyright 2015 AWeber Communications
+%% @copyright 2015-2016 AWeber Communications
 %% @end
 %%==============================================================================
 -module(autocluster_httpc).
@@ -9,6 +9,7 @@
 -export([build_query/1,
          build_path/1,
          build_uri/5,
+         delete/6,
          get/5,
          post/6,
          put/6]).
