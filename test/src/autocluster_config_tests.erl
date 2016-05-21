@@ -53,8 +53,7 @@ config_docker_screws_with_envvar_test() ->
   os:putenv("CONSUL_PORT", "tcp://172.17.10.3:8501"),
   ?assertEqual(8501, autocluster_config:get(consul_port)).
 
-config_get_os_atom_value_test() ->
+config_get_failure_mode_value_test() ->
   reset_config(),
-  os:putenv("AUTOCLUSTER_CLUSTER_FORMATION_FAILURE_MODE", "stop"),
-  ?assertEqual(stop, autocluster_config:get(cluster_formation_failure_mode)).
-
+  os:putenv("AUTOCLUSTER_FAILURE", "stop"),
+  ?assertEqual(stop, autocluster_config:get(autocluster_failure)).

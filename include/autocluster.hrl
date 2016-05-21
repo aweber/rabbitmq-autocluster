@@ -1,16 +1,18 @@
 %%==============================================================================
 %% @author Gavin M. Roy <gavinr@aweber.com>
-%% @copyright 2015 AWeber Communications
+%% @copyright 2015-2016 AWeber Communications
 %% @end
 %%==============================================================================
 
 -record(config, {key, os, default, type, is_port}).
 
+%% Config Record  key                    environment variable     default      type     is port
 -define(CONFIG_MAP,
         [{config, backend,               "AUTOCLUSTER_TYPE",      consul,      atom,    false},
          {config, autocluster_host,      "AUTOCLUSTER_HOST",      "undefined", string,  false},
+         {config, autocluster_failure,   "AUTOCLUSTER_FAILURE",   "ignore",    atom,    false},
+         {config, startup_delay,         "AUTOCLUSTER_DELAY",     5,           integer, false},
          {config, longname,              "RABBITMQ_USE_LONGNAME", false,       atom,    false},
-         {config, cluster_formation_failure_mode, "AUTOCLUSTER_CLUSTER_FORMATION_FAILURE_MODE", "ignore", string, false},
          {config, node_type,             "RABBITMQ_NODE_TYPE",    disc,        atom,    false},
          {config, cluster_name,          "CLUSTER_NAME",          "undefined", string,  false},
          {config, consul_acl,            "CONSUL_ACL",            "undefined", string,  false},
@@ -26,6 +28,6 @@
          {config, etcd_host,             "ETCD_HOST",             "localhost", string,  false},
          {config, etcd_port,             "ETCD_PORT",             2379,        integer, true},
          {config, etcd_prefix,           "ETCD_PREFIX",           "rabbitmq",  string,  false},
-         {config, etcd_node_ttl,         "ETC_NODE_TTL",          30,          integer, false}]).
+         {config, etcd_node_ttl,         "ETCD_NODE_TTL",         30,          integer, false}]).
 
 -define(CONSUL_CHECK_NOTES, list_to_atom("RabbitMQ Auto-Cluster Plugin TTL Check")).
