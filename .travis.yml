@@ -1,32 +1,20 @@
-sudo: false
-language: erlang
-otp_release:
-  - 17.5
+sudo: required
+services:
+  - docker
 addons:
   apt:
     packages:
-      - xsltproc
-env:
-  - BUILD_DIR=$HOME/rabbitmq-public-umbrella CONSUL_VERSION=0.5.2 RABBIT_TAG=rabbitmq_v3_5_6
-install:
-  - "$TRAVIS_BUILD_DIR/travis-umbrella-setup.sh"
-  - "$TRAVIS_BUILD_DIR/travis-install-consul.sh"
-script: cd $BUILD_DIR/autocluster && make test
-before_deploy:
-  - cd $BUILD_DIR/autocluster
-  - VERSION=$TRAVIS_TAG make
-  - mkdir -p $HOME/dpl
-  - cd $HOME/dpl
-cache:
-  apt: true
-  directories:
-  - "$HOME/consul"
-  - "$BUILD_DIR"
+    - xsltproc
+language: erlang
+otp_release:
+- 17.5
+script: make test
 deploy:
   provider: releases
   api_key:
     secure: ktklMK+XMOteFt+m9NHhVqKkA1Wo8f9L/cJphUmBMgb3TS+4+vAU50yY8omIyprS8poc3mBWxjYD9p9xdeDnXY2tiFrLDKCWU/jbH3awD0uL6W0Di8BYAVOGhr2Jjjp6gi/B67wHtCtzEoSSNNfMMZ+RWf4GZjJ96NXOLhPRx4k=
-  file: "$BUILD_DIR/autocluster/dist/autocluster-${TRAVIS_TAG}.ez"
+  file: "plugins/autocluster-${TRAVIS_TAG}.ez"
   on:
     tags: true
     repo: aweber/rabbitmq-autocluster
+
