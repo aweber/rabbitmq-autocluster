@@ -24,12 +24,12 @@ run ``rabbitmq-plugins enable autocluster``.
 Configuration
 -------------
 Configuration documentation can be found in the
-[Project Wiki](https://github.com/aweber/rabbitmq-autocluster/wiki).
+`Project Wiki <https://github.com/aweber/rabbitmq-autocluster/wiki>`_.
 
 Development
 -----------
 Instructions for setting up the development environment can be found in the
-[Project Wiki](https://github.com/aweber/rabbitmq-autocluster/wiki/Development-Environment).
+`Project Wiki <https://github.com/aweber/rabbitmq-autocluster/wiki/Development-Environment>`_.
 
 License
 -------
