@@ -5,11 +5,15 @@ addons:
   apt:
     packages:
     - xsltproc
+  hosts:
+    - travis.dev
 language: erlang
 otp_release:
 - 17.5
 cache:
   apt: true
+before_script:
+- rabbitmqctl stop
 script: make test
 deploy:
   provider: releases
