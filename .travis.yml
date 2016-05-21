@@ -1,12 +1,8 @@
 sudo: required
-services:
-  - docker
 addons:
   apt:
     packages:
     - xsltproc
-  hosts:
-    - travis.dev
 language: erlang
 otp_release:
 - 17.5
@@ -14,7 +10,8 @@ cache:
   apt: true
 before_script:
 - "ps aux |grep [r]abbit"
-- "epmd -names"
+- sudo service rabbitmq stop
+- (test "$TRAVIS_TAG" && git checkout "$TRAVIS_TAG") || (test "$TRAVIS_BRANCH" && git checkout "$TRAVIS_BRANCH")
 script: make test
 deploy:
   provider: releases
