@@ -1,7 +1,8 @@
 RabbitMQ Autocluster
 ====================
 An RabbitMQ plugin that clusters nodes automatically using `Consul <https://consul.io>`_,
-`etcd2 <https://github.com/coreos/etcd>`_, or DNS for service discovery.
+`etcd2 <https://github.com/coreos/etcd>`_, DNS, `AWS EC2 tags <http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html>`_
+or `AWS Autoscaling Groups <https://aws.amazon.com/autoscaling/>`_ for service discovery.
 
 .. image:: https://img.shields.io/travis/aweber/rabbitmq-autocluster.svg
     :target: https://travis-ci.org/aweber/rabbitmq-autocluster
@@ -12,6 +13,7 @@ Download
 --------
 Downloads of autocluster can be found on the
 `GitHub Releases <https://github.com/aweber/rabbitmq-autocluster/releases>`_ page.
+
 Check for version compatibility in the release notes.
 
 Installation
@@ -28,9 +30,6 @@ Development
 -----------
 Instructions for setting up the development environment can be found in the
 [Project Wiki](https://github.com/aweber/rabbitmq-autocluster/wiki/Development-Environment).
-
-History
--------
 
 License
 -------
