@@ -1,6 +1,6 @@
 %%==============================================================================
 %% @author Gavin M. Roy <gavinr@aweber.com>
-%% @copyright 2015 AWeber Communications
+%% @copyright 2015-2016 AWeber Communications
 %% @end
 %%==============================================================================
 -module(autocluster_consul).
@@ -90,9 +90,9 @@ register() ->
 %% @end
 %%
 send_health_check_pass() ->
-  {Prefix, Srv, TTL} = {autocluster_config:get(consul_service_prefix),
-                   autocluster_config:get(consul_service),
-                   autocluster_config:get(consul_service_ttl)},
+  {Prefix, Srv, _TTL} = {autocluster_config:get(consul_service_prefix),
+                         autocluster_config:get(consul_service),
+                         autocluster_config:get(consul_service_ttl)},
 
   SrvID = full_service_id(Prefix, Srv),
   Service = autocluster_util:as_atom(lists:concat(["service", ':', SrvID])),
