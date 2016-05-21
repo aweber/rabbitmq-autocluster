@@ -13,7 +13,8 @@ otp_release:
 cache:
   apt: true
 before_script:
-- rabbitmqctl status
+- "ps aux |grep [r]abbit"
+- "epmd -names"
 script: make test
 deploy:
   provider: releases
