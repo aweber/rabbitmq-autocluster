@@ -8,6 +8,8 @@ addons:
 language: erlang
 otp_release:
 - 17.5
+cache:
+  apt: true
 script: make test
 deploy:
   provider: releases
