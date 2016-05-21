@@ -10,6 +10,7 @@ consul:
 
 etcd2:
   image: slintes/etcd2:latest
+  ports:
     - 2379
     - 2380
     - 4001
