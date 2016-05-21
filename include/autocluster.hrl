@@ -10,7 +10,7 @@
 -define(CONFIG_MAP,
         [{config, backend,               "AUTOCLUSTER_TYPE",      consul,      atom,    false},
          {config, autocluster_host,      "AUTOCLUSTER_HOST",      "undefined", string,  false},
-         {config, autocluster_failure,   "AUTOCLUSTER_FAILURE",   "ignore",    atom,    false},
+         {config, autocluster_failure,   "AUTOCLUSTER_FAILURE",   ignore,      atom,    false},
          {config, startup_delay,         "AUTOCLUSTER_DELAY",     5,           integer, false},
          {config, longname,              "RABBITMQ_USE_LONGNAME", false,       atom,    false},
          {config, node_type,             "RABBITMQ_NODE_TYPE",    disc,        atom,    false},
