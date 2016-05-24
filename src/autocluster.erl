@@ -22,10 +22,14 @@
 %%
 init() ->
   autocluster_log:maybe_set_default_log_level(),
-  application:ensure_started(inets),
+  application:ensure_all_started(inets),
   maybe_delay_startup(),
-  Registered = node_is_registered(),
-  maybe_cluster_node(Registered).
+  case node_is_registered() of
+    error ->
+      startup_failure();
+    Registered ->
+      maybe_cluster_node(Registered)
+  end.
 
 
 %% Clustering Logic
@@ -45,10 +49,13 @@ node_is_registered() ->
 %% @end
 %%
 ensure_registered(consul) ->
+  autocluster_log:debug("Using consul backend"),
   ensure_registered(consul, autocluster_consul);
 ensure_registered(dns) ->
+  autocluster_log:debug("Using DNS backend"),
   ensure_registered(dns, autocluster_dns);
 ensure_registered(etcd) ->
+  autocluster_log:debug("Using etcd backend"),
   ensure_registered(etcd, autocluster_etcd);
 ensure_registered(Backend) ->
   autocluster_log:error("Unsupported backend: ~s.", [Backend]),
@@ -264,6 +271,7 @@ maybe_delay_startup() ->
 %%
 startup_delay(0) -> ok;
 startup_delay(Max) ->
-  Duration = random:uniform(Max),
+  Seed = random:seed(),
+  {Duration, _} = random:uniform_s(Max, Seed),
   autocluster_log:info("Delaying startup for ~pms.~n", [Duration]),
   timer:sleep(Duration).
