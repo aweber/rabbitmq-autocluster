@@ -13,6 +13,12 @@
          parse_port/1]).
 
 
+%% Export all for unit tests
+-ifdef(TEST).
+-compile(export_all).
+-endif.
+
+
 %% @spec as_atom(Value) -> list()
 %% where Value = list()|integer()
 %% @doc Return the value as a list
@@ -68,11 +74,22 @@ node_name(Value) ->
         _ -> as_string(lists:nth(1, Parts))
       end
   end,
-  list_to_atom(string:join(["rabbit", Host], "@")).
+  list_to_atom(string:join([node_prefix(), Host], "@")).
+
+
+%% @spec node_prefix() -> string()
+%% @doc Extract the "local part" of the ``RABBITMQ_NODENAME`` environment
+%%      variable, if set, otherwise use the default node name value (rabbit).
+%% @end
+%%
+node_prefix() ->
+  Value = autocluster_config:get(node_name),
+  lists:nth(1, string:tokens(Value, "@")).
 
 
 %% @spec parse_port(mixed) -> integer()
-%% @doc Returns the port, even if Docker linking overwrites a configuration value to be a URI instead of numeric value
+%% @doc Returns the port, even if Docker linking overwrites a configuration
+%%      value to be a URI instead of numeric value
 %% @end
 %%
 parse_port(Value) when is_list(Value) -> as_integer(lists:last(string:tokens(Value, ":")));
