@@ -5,6 +5,6 @@
   {env, []},
   {modules, []},
   {registered, []},
-  {applications, [kernel, stdlib, rabbit, inets]}
+  {applications, [kernel, stdlib, rabbit, inets, rabbitmq_aws]}
  ]
 }.

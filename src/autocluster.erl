@@ -48,6 +48,9 @@ node_is_registered() ->
 %% @doc Step 2: get the module for the backend type and pass it to step three.
 %% @end
 %%
+ensure_registered(aws) ->
+  autocluster_log:debug("Using AWS backend"),
+  ensure_registered(aws, autocluster_aws);
 ensure_registered(consul) ->
   autocluster_log:debug("Using consul backend"),
   ensure_registered(consul, autocluster_consul);
