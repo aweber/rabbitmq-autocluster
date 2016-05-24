@@ -30,8 +30,8 @@ ENV RABBITMQ_PLUGINS_EXPAND_DIR=/var/lib/rabbitmq/plugins
 
 ADD plugins/rabbitmq_aws-*.ez /usr/lib/rabbitmq/plugins/
 ADD plugins/autocluster-*.ez /usr/lib/rabbitmq/plugins/
-ADD test/erlang.cookie /var/lib/rabbitmq/.erlang.cookie
-ADD test/rabbitmq.config /usr/lib/rabbitmq/etc/rabbitmq/rabbitmq.config
+ADD etc/erlang.cookie /var/lib/rabbitmq/.erlang.cookie
+ADD etc/rabbitmq.config /usr/lib/rabbitmq/etc/rabbitmq/rabbitmq.config
 
 # Fetch the external plugins and setup RabbitMQ
 RUN \
