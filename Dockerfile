@@ -23,17 +23,15 @@ ENV RABBITMQ_LOGS=-
 ENV RABBITMQ_SASL_LOGS=-
 ENV RABBITMQ_DIST_PORT=25672
 ENV RABBITMQ_SERVER_ERL_ARGS="+K true +A128 +P 1048576 -kernel inet_default_connect_options [{nodelay,true}]"
-ENV RABBITMQ_CONFIG_FILE=/usr/lib/rabbitmq/etc/rabbitmq.config
-ENV RABBITMQ_ENABLED_PLUGINS_FILE=/usr/lib/rabbitmq/etc/enabled_plugins
 ENV RABBITMQ_MNESIA_DIR=/var/lib/rabbitmq/mnesia
 ENV RABBITMQ_PID_FILE=/var/lib/rabbitmq/rabbitmq.pid
-ENV RABBITMQ_PLUGINS_DIR=usr/lib/rabbitmq/plugins
+ENV RABBITMQ_PLUGINS_DIR=/usr/lib/rabbitmq/plugins
 ENV RABBITMQ_PLUGINS_EXPAND_DIR=/var/lib/rabbitmq/plugins
 
-ADD test/erlang.cookie /var/lib/rabbitmq/.erlang.cookie
-ADD test/rabbitmq.config /usr/lib/rabbitmq/etc/rabbitmq.config
 ADD plugins/rabbitmq_aws-*.ez /usr/lib/rabbitmq/plugins/
 ADD plugins/autocluster-*.ez /usr/lib/rabbitmq/plugins/
+ADD test/erlang.cookie /var/lib/rabbitmq/.erlang.cookie
+ADD test/rabbitmq.config /usr/lib/rabbitmq/etc/rabbitmq/rabbitmq.config
 
 # Fetch the external plugins and setup RabbitMQ
 RUN \
