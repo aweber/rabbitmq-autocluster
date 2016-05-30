@@ -23,7 +23,6 @@
 init() ->
   autocluster_log:maybe_set_default_log_level(),
   application:ensure_all_started(inets),
-  maybe_delay_startup(),
   case node_is_registered() of
     error ->
       startup_failure();
@@ -60,6 +59,9 @@ ensure_registered(dns) ->
 ensure_registered(etcd) ->
   autocluster_log:debug("Using etcd backend"),
   ensure_registered(etcd, autocluster_etcd);
+ensure_registered(unconfigured) ->
+  autocluster_log:error("Backend is not configured, please read the documentation"),
+  error;
 ensure_registered(Backend) ->
   autocluster_log:error("Unsupported backend: ~s.", [Backend]),
   error.
@@ -72,6 +74,7 @@ ensure_registered(Backend) ->
 %% @end
 %%
 ensure_registered(Name, Module) ->
+  maybe_delay_startup(),
   autocluster_log:info("Starting ~p registration.", [Name]),
   Nodes = Module:nodelist(),
   maybe_register(Nodes, Name, Module).
@@ -276,5 +279,5 @@ startup_delay(0) -> ok;
 startup_delay(Max) ->
   Seed = random:seed(),
   {Duration, _} = random:uniform_s(Max, Seed),
-  autocluster_log:info("Delaying startup for ~pms.~n", [Duration]),
+  autocluster_log:info("Delaying startup for ~pms.", [Duration]),
   timer:sleep(Duration).
