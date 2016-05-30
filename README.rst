@@ -16,8 +16,8 @@ Downloads of autocluster can be found on the
 
 Check for version compatibility in the release notes.
 
-**Note** The ``rabbitmq_autocluster`` plugin requires Erlang R17.5 or higher. **This may not correspond with the minimum Erlang
-version required by RabbitMQ.**
+**Note** The ``rabbitmq_autocluster`` plugin requires Erlang R17.5 or higher. *This may not correspond with the minimum Erlang
+version required by RabbitMQ.*
 
 Installation
 ------------
