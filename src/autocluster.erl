@@ -277,7 +277,8 @@ maybe_delay_startup() ->
 %%
 startup_delay(0) -> ok;
 startup_delay(Max) ->
-  Seed = random:seed(),
-  {Duration, _} = random:uniform_s(Max, Seed),
+  <<A:32, B:32, C:32>> = crypto:rand_bytes(12),
+  random:seed({A,B,C}),
+  Duration = random:uniform(Max),
   autocluster_log:info("Delaying startup for ~pms.", [Duration]),
   timer:sleep(Duration).
