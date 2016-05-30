@@ -16,13 +16,19 @@ Downloads of autocluster can be found on the
 
 Check for version compatibility in the release notes.
 
-**Note** The ``rabbitmq_autocluster`` plugin requires Erlang R17.5 or higher. *This may not correspond with the minimum Erlang
+**Important**
+The ``rabbitmq_autocluster`` plugin requires Erlang R17.5 or higher. *This may not correspond with the minimum Erlang
 version required by RabbitMQ.*
 
 Installation
 ------------
-Place the plugin in the RabbitMQ plugins directory. To enable,
-run ``rabbitmq-plugins enable autocluster``.
+
+1. Place both ``autocluster-%%VSN%%.ez`` and the ``rabbitmq_aws-%%VSN%%.ez`` plugin files in the RabbitMQ plugins directory.
+2. Run ``rabbitmq-plugins enable autocluster``.
+3. Configure the plugin.
+
+**Note**
+As of version ``0.5`` the autocluster plugin does not have a default backend configured. See the `Project Wiki <https://github.com/aweber/rabbitmq-autocluster/wiki>`_ for configuration details.
 
 Configuration
 -------------
