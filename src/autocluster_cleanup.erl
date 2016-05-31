@@ -18,7 +18,10 @@
          terminate/2,
          code_change/3]).
 
--export([]).
+%% Export all for unit tests
+-ifdef(TEST).
+-compile(export_all).
+-endif.
 
 -record(state, {interval, warn_only, timer}).
 

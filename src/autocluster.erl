@@ -12,6 +12,10 @@
                     {mfa,         {autocluster, init, []}},
                     {enables,     pre_boot}]}).
 
+%% Export all for unit tests
+-ifdef(TEST).
+-compile(export_all).
+-endif.
 
 -spec init() -> ok | error.
 %% @doc Register the node with Consul and then check to see if there are other

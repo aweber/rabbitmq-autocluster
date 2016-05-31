@@ -12,8 +12,10 @@
          register/0,
          unregister/0]).
 
-%% test exports
--export([extract_host/1]).
+%% Export all for unit tests
+-ifdef(TEST).
+-compile(export_all).
+-endif.
 
 -include("autocluster.hrl").
 

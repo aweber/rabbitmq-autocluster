@@ -9,6 +9,11 @@
 
 -include("autocluster.hrl").
 
+%% Export all for unit tests
+-ifdef(TEST).
+-compile(export_all).
+-endif.
+
 %% @spec get(atom()) -> mixed
 %% @doc Fetch the specified config value, checking first for an OS environment variable,
 %%      then checking application config. If neither are set, return the default value.
