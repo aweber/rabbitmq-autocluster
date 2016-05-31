@@ -1,4 +1,4 @@
-FROM gliderlabs/alpine:edge
+FROM alpine:edge
 
 # Version of RabbitMQ to install
 ENV RABBITMQ_VERSION=3.6.2
