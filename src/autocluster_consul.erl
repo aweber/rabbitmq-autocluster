@@ -196,7 +196,7 @@ registration_body_add_name(Payload) ->
 registration_body_maybe_add_address(Payload) ->
   registration_body_maybe_add_address(Payload, service_address()).
 
-registration_body_maybe_add_address(Payload, undefined) -> Payload;
+registration_body_maybe_add_address(Payload, "undefined") -> Payload;
 registration_body_maybe_add_address(Payload, Address) ->
   lists:append(Payload, [{'Address', list_to_atom(Address)}]).
 
