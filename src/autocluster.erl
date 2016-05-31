@@ -134,6 +134,7 @@ process_registration_result({error, Reason}, Name, _) ->
 %% @end
 %%
 maybe_cluster_node({ok, Nodes}) ->
+  autocluster_log:debug("Discovered ~p", [Nodes]),
   ensure_clustered(Nodes);
 maybe_cluster_node(error) ->
   autocluster_log:error("Error in ensuring clustered."),
