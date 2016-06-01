@@ -13,12 +13,15 @@ before_script:
 - ((sudo service rabbitmq stop) || /bin/true)
 - (test "$TRAVIS_TAG" && git checkout "$TRAVIS_TAG") || (test "$TRAVIS_BRANCH" && git checkout "$TRAVIS_BRANCH")
 script: make test
+before_deploy:
+- make clean
+- make dist
+- tar cvfz autocluster-${TRAVIS_TAG}.tgz plugins/autocluster-${TRAVIS_TAG}.ez plugins/rabbitmq_aws-*.ez
 deploy:
   provider: releases
   api_key:
     secure: ktklMK+XMOteFt+m9NHhVqKkA1Wo8f9L/cJphUmBMgb3TS+4+vAU50yY8omIyprS8poc3mBWxjYD9p9xdeDnXY2tiFrLDKCWU/jbH3awD0uL6W0Di8BYAVOGhr2Jjjp6gi/B67wHtCtzEoSSNNfMMZ+RWf4GZjJ96NXOLhPRx4k=
-  file: "plugins/autocluster-${TRAVIS_TAG}.ez"
+  file: autocluster-${TRAVIS_TAG}.tgz
   on:
     tags: true
     repo: aweber/rabbitmq-autocluster
-
