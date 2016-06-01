@@ -22,5 +22,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="rabbit_common" />
     <orderEntry type="module" module-name="rabbitmq_aws" />
+    <orderEntry type="module" module-name="rabbit" />
   </component>
 </module>
