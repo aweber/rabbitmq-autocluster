@@ -1,0 +1,6 @@
+{
+  "name": "RabbitMQ Autocluster Plugin",
+  "tagline": "A RabbitMQ plugin that clusters nodes automatically using Consul, etcd2, DNS, or natively in AWS",
+  "body": "The rabbitmq-autocluster plugin clusters RabbitMQ nodes automatically using a pre-configured service discovery mechanism.\r\n\r\nThe currently supported service discovery backends are:\r\n\r\n- [Amazon AWS EC2 Tags](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html)\r\n- [Amazon AWS Autoscaling Group Membership](https://aws.amazon.com/autoscaling/)\r\n- [Consul](http://consul.io)\r\n- A-Record based [DNS Round-robins](https://en.wikipedia.org/wiki/Round-robin_DNS)\r\n- [etcd2](https://coreos.com/etcd/docs/latest/)\r\n\r\nCheck out the [Getting Started](/aweber/rabbitmq-autocluster/wiki/General%20Settings) page to learn about the initial configuration. Then consult the specific backend configuration pages. ",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}
