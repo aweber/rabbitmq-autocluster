@@ -32,7 +32,23 @@
 <li><a href="https://coreos.com/etcd/docs/latest/">etcd2</a></li>
 </ul>
 
-<p>Check out the <a href="/aweber/rabbitmq-autocluster/wiki/General%20Settings">Getting Started</a> page to learn about the initial configuration. Then consult the specific backend configuration pages. </p>
+<p><strong>Important</strong> The rabbitmq-autocluster plugin requires Erlang R17.5 or higher. This may not correspond with the minimum Erlang version required by RabbitMQ.</p>
+
+<h1>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h1>
+
+<ol>
+<li>Place both <code>autocluster-%%VSN%%.ez</code> and the <code>rabbitmq_aws-%%VSN%%.ez</code> plugin files in the RabbitMQ plugins directory.</li>
+<li>Run <code>rabbitmq-plugins enable autocluster</code>.</li>
+<li>Configure the plugin.</li>
+</ol>
+
+<p><strong>Note</strong> As of version 0.5 the autocluster plugin does not have a default backend configured. See the <a href="https://github.com/aweber/rabbitmq-autocluster/wiki">Project Wiki</a> for configuration details.</p>
+
+<h1>
+<a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Configuration</h1>
+
+<p>Configuration documentation can be found in the <a href="https://github.com/aweber/rabbitmq-autocluster/wiki">Project Wiki</a>. Check out the <a href="https://github.com/aweber/rabbitmq-autocluster/wiki/General%20Settings">Getting Started</a> page to learn about the initial configuration.</p>
 
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/aweber/rabbitmq-autocluster">RabbitMQ Autocluster Plugin</a> is maintained by <a href="https://github.com/aweber">aweber</a>.</span>
