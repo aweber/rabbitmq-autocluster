@@ -27,6 +27,8 @@ Installation
 2. Run ``rabbitmq-plugins enable autocluster``.
 3. Configure the plugin.
 
+Alternatively, there is a pre-built Docker Image available at on DockerHub as `aweber/rabbitmq-autocluster <https://hub.docker.com/r/aweber/rabbitmq-autocluster/>`_.
+
 **Note**
 As of version ``0.5`` the autocluster plugin does not have a default backend configured. See the `Project Wiki <https://github.com/aweber/rabbitmq-autocluster/wiki>`_ for configuration details.
 
