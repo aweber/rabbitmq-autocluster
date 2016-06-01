@@ -67,8 +67,8 @@ init([]) ->
        State = #state{interval = Interval,
                       warn_only = autocluster_config:get(cleanup_warn_only),
                       timer = apply_interval(Interval)},
-       autocluster_log:debug("(cleanup) Timer started {~p,~p}",
-                             [State#state.interval, State#state.warn_only]),
+       autocluster_log:info("(cleanup) Timer started {~p,~p}",
+                            [State#state.interval, State#state.warn_only]),
        {ok, State};
      _ -> ignore
    end.
