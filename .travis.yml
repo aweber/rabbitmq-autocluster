@@ -9,19 +9,14 @@ services:
   - docker
 otp_release:
 - 17.5
-- 18.0
-- 18.1
-- 18.2
-- 18.2.1
-- 18.3
 cache:
   apt: true
 before_install:
 - ((ps aux |grep [r]abbit) || /bin/true)
 - ((sudo service rabbitmq stop) || /bin/true)
 - mkdir -p bin
-- curl -o bin/rebar3 https://s3.amazonaws.com/rebar3/rebar3
-- curl -o bin/rebar https://github.com/rebar/rebar/releases/download/2.6.1/rebar
+- curl -Ls -o bin/rebar3 https://s3.amazonaws.com/rebar3/rebar3
+- curl -Ls -o bin/rebar https://github.com/rebar/rebar/releases/download/2.6.1/rebar
 - chmod u+x bin/rebar bin/rebar3
 - export PATH=$PATH:$PWD/bin
 before_script:
