@@ -19,6 +19,7 @@ before_install:
 - curl -Ls -o bin/rebar https://github.com/rebar/rebar/releases/download/2.6.1/rebar
 - chmod u+x bin/rebar bin/rebar3
 - export PATH=$PATH:$PWD/bin
+- pip install --user codecov
 before_script:
 - (test "$TRAVIS_TAG" && git checkout "$TRAVIS_TAG") || (test "$TRAVIS_BRANCH" && git checkout "$TRAVIS_BRANCH")
 script: rebar3 eunit
