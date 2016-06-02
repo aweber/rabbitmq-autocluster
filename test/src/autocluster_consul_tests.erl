@@ -9,12 +9,12 @@ init_test_() ->
   {
     foreach,
     fun () ->
+      autocluster_testing:reset(),
       meck:new(timer, [unstick, passthrough]),
       meck:new(autocluster_log, []),
-      unset_env_vars(),
       [timer, autocluster_log]
     end,
-    fun meck:unload/1,
+    fun autocluster_testing:on_finish/1,
     [
       {"default config", fun() ->
         meck:expect(autocluster_log, debug, fun(_Message) ->
@@ -56,11 +56,8 @@ init_test_() ->
 registration_body1_test_() ->
   {
     foreach,
-    fun () ->
-      unset_env_vars(),
-      []
-    end,
-    fun (_) -> ok end,
+    fun autocluster_testing:on_start/0,
+    fun autocluster_testing:on_finish/1,
     [
       {"simple case", fun() ->
         Expectation = [{'ID',rabbitmq},
@@ -105,11 +102,11 @@ nodelist_test_() ->
   {
     foreach,
     fun () ->
+      autocluster_testing:reset(),
       meck:new(autocluster_httpc, []),
-      unset_env_vars(),
       [autocluster_httpc]
     end,
-    fun meck:unload/1,
+    fun autocluster_testing:on_finish/1,
     [
       {"default values", fun() ->
         meck:expect(autocluster_httpc, get,
@@ -192,7 +189,7 @@ nodelist_test_() ->
             Body = "[{\"Node\": {\"Node\": \"rabbit2.internal.domain\", \"Address\": \"10.20.16.160\"}, \"Checks\": [{\"Node\": \"rabbit2.internal.domain\", \"CheckID\": \"service:rabbitmq\", \"Name\": \"Service \'rabbitmq\' check\", \"ServiceName\": \"rabbitmq\", \"Notes\": \"Connect to the port internally every 30 seconds\", \"Status\": \"passing\", \"ServiceID\": \"rabbitmq\", \"Output\": \"\"}, {\"Node\": \"rabbit2.internal.domain\", \"CheckID\": \"serfHealth\", \"Name\": \"Serf Health Status\", \"ServiceName\": \"\", \"Notes\": \"\", \"Status\": \"passing\", \"ServiceID\": \"\", \"Output\": \"Agent alive and reachable\"}], \"Service\": {\"Address\": \"\", \"Port\": 5672, \"ID\": \"rabbitmq\", \"Service\": \"rabbitmq\", \"Tags\": [\"amqp\"]}}, {\"Node\": {\"Node\": \"rabbit1.internal.domain\", \"Address\": \"10.20.16.159\"}, \"Checks\": [{\"Node\": \"rabbit1.internal.domain\", \"CheckID\": \"service:rabbitmq\", \"Name\": \"Service \'rabbitmq\' check\", \"ServiceName\": \"rabbitmq\", \"Notes\": \"Connect to the port internally every 30 seconds\", \"Status\": \"passing\", \"ServiceID\": \"rabbitmq\", \"Output\": \"\"}, {\"Node\": \"rabbit1.internal.domain\", \"CheckID\": \"serfHealth\", \"Name\": \"Serf Health Status\", \"ServiceName\": \"\", \"Notes\": \"\", \"Status\": \"passing\", \"ServiceID\": \"\", \"Output\": \"Agent alive and reachable\"}], \"Service\": {\"Address\": \"\", \"Port\": 5672, \"ID\": \"rabbitmq\", \"Service\": \"rabbitmq\", \"Tags\": [\"amqp\"]}}]",
             rabbit_misc:json_decode(Body)
           end),
-        Expectation = {ok,[rabbit@rabbit1,rabbit@rabbit2]},
+        Expectation = {ok,['rabbit@rabbit1', 'rabbit@rabbit2']},
         ?assertEqual(Expectation, autocluster_consul:nodelist()),
         meck:validate(autocluster_httpc)
        end}
@@ -204,12 +201,12 @@ register_test_() ->
   {
     foreach,
     fun () ->
+      autocluster_testing:reset(),
       meck:new(autocluster_httpc, []),
       meck:new(autocluster_util, [passthrough]),
-      unset_env_vars(),
       [autocluster_httpc, autocluster_util]
     end,
-    fun meck:unload/1,
+    fun autocluster_testing:on_finish/1,
     [
       {"default values", fun() ->
         meck:expect(autocluster_httpc, post,
@@ -304,12 +301,12 @@ send_health_check_pass_test_() ->
   {
     foreach,
     fun () ->
+      autocluster_testing:reset(),
       meck:new(autocluster_httpc, []),
       meck:new(autocluster_log, []),
-      unset_env_vars(),
       [autocluster_httpc, autocluster_log]
     end,
-    fun meck:unload/1,
+    fun autocluster_testing:on_finish/1,
     [
       {"default values", fun() ->
         meck:expect(autocluster_httpc, get,
@@ -377,11 +374,11 @@ unregister_test_() ->
   {
     foreach,
     fun () ->
+      autocluster_testing:reset(),
       meck:new(autocluster_httpc, []),
-      unset_env_vars(),
       [autocluster_httpc]
     end,
-    fun meck:unload/1,
+    fun autocluster_testing:on_finish/1,
     [
       {"default values", fun() ->
         meck:expect(autocluster_httpc, get,
@@ -441,15 +438,3 @@ unregister_test_() ->
        end}
     ]
   }.
-
-unset_env_vars() ->
-  os:unsetenv("CLUSTER_NAME"),
-  os:unsetenv("CONSUL_SCHEME"),
-  os:unsetenv("CONSUL_HOST"),
-  os:unsetenv("CONSUL_PORT"),
-  os:unsetenv("CONSUL_ACL_TOKEN"),
-  os:unsetenv("CONSUL_SVC"),
-  os:unsetenv("CONSUL_SVC_ADDR"),
-  os:unsetenv("CONSUL_SVC_ADDR_AUTO"),
-  os:unsetenv("CONSUL_SVC_PORT"),
-  os:unsetenv("CONSUL_SVC_TTL").

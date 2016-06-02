@@ -33,11 +33,11 @@ node_name_sname_from_binary_sname_test() ->
   ?assertEqual('rabbit@node1', autocluster_util:node_name(<<"node1">>)).
 
 node_name_sname_from_lname_test() ->
-  autocluster_config_tests:reset_config(),
+  autocluster_testing:reset(),
   ?assertEqual('rabbit@node2', autocluster_util:node_name("node2.foo.bar")).
 
 node_name_lname_test() ->
-  autocluster_config_tests:reset_config(),
+  autocluster_testing:reset(),
   application:set_env(autocluster, longname, true),
   ?assertEqual('rabbit@node3.foo.bar', autocluster_util:node_name("node3.foo.bar")).
 
