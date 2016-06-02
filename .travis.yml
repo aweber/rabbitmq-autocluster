@@ -21,9 +21,9 @@ before_install:
 - export PATH=$PATH:$PWD/bin
 before_script:
 - (test "$TRAVIS_TAG" && git checkout "$TRAVIS_TAG") || (test "$TRAVIS_BRANCH" && git checkout "$TRAVIS_BRANCH")
-script: ./rebar3 eunit
+script: rebar3 eunit
 after_success:
-  - bin/covertool -cover _build/test/cover/eunit.coverdata -appname rabbitmq-autocluster -output cobertura.xml
+  - covertool -cover _build/test/cover/eunit.coverdata -appname rabbitmq-autocluster -output cobertura.xml
   - codecov
 before_deploy:
 - make clean
