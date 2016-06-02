@@ -15,8 +15,6 @@ otp_release:
 - 18.3
 cache:
   apt: true
-env:
-  secure: "HUaHfuif/IOo7FRrY25oky1RwLVh4Mm2hLbtEtB3IeaxzoE//wengYiBNcxkXLPX1PnEUV5tsrCtlfa0a6i1LrOYfaGPk+8n6hmAvYMbpPqDnRCOyzorMYxDohBEJpbCT+RctIFWVPRV2wDN1SrQwTlnlL7sXZJ3oAMDHuzhLt0="
 before_script:
 - ((ps aux |grep [r]abbit) || /bin/true)
 - ((sudo service rabbitmq stop) || /bin/true)
