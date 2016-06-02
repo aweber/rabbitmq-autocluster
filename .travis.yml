@@ -6,6 +6,11 @@ addons:
 language: erlang
 otp_release:
 - 17.5
+- 18.0
+- 18.1
+- 18.2
+- 18.2.1
+- 18.3
 cache:
   apt: true
 before_script:
