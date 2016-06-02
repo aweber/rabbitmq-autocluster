@@ -14,6 +14,12 @@
          post/6,
          put/6]).
 
+%% Export all for unit tests
+-ifdef(TEST).
+-compile(export_all).
+-endif.
+
+
 -define(CONTENT_JSON, "application/json").
 -define(CONTENT_URLENCODED, "application/x-www-form-urlencoded").
 
