@@ -19,7 +19,6 @@ get_test_() ->
   }.
 
 
-
 app_envvar_test_() ->
   {
     foreach,

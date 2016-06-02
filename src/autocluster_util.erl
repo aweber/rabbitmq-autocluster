@@ -21,50 +21,68 @@
 -endif.
 
 
-%% @spec as_atom(Value) -> list()
-%% where Value = list()|integer()
-%% @doc Return the value as a list
+%%--------------------------------------------------------------------
+%% @doc
+%% Return the passed in value as an atom.
 %% @end
-%%
-as_atom(Value) when is_atom(Value) -> Value;
-as_atom(Value) when is_binary(Value) -> list_to_atom(binary_to_list(Value));
-as_atom(Value) when is_list(Value) -> list_to_atom(Value);
+%%--------------------------------------------------------------------
+-spec as_atom(atom() | binary() | string()) -> atom().
+as_atom(Value) when is_atom(Value) ->
+  Value;
+as_atom(Value) when is_binary(Value) ->
+  list_to_atom(binary_to_list(Value));
+as_atom(Value) when is_list(Value) ->
+  list_to_atom(Value);
 as_atom(Value) ->
-  autocluster_log:error("Unexpected data type for atom value: ~p~n", [Value]),
-  Value.
-
-
-%% @spec maybe_convert_to_int(Value) -> integer()
-%% where Value = list()|integer()
-%% @doc Return the value as an integer
-%% @end
-%%
-as_integer([]) -> undefined;
-as_integer(Value) when is_list(Value) -> list_to_integer(Value);
-as_integer(Value) when is_integer(Value) -> Value;
-as_integer(Value) ->
-  autocluster_log:error("Unexpected data type for integer value: ~p~n", [Value]),
-  Value.
-
-
-%% @spec as_string(Value) -> list()
-%% where Value = list()|integer()
-%% @doc Return the value as a list
-%% @end
-%%
-as_string([]) -> "";
-as_string(Value) when is_atom(Value) -> as_string(atom_to_list(Value));
-as_string(Value) when is_binary(Value) -> as_string(binary_to_list(Value));
-as_string(Value) when is_integer(Value) -> as_string(integer_to_list(Value));
-as_string(Value) when is_list(Value) -> lists:flatten(Value);
-as_string(Value) ->
-  autocluster_log:error("Unexpected data type for list value: ~p~n", [Value]),
+  autocluster_log:error("Unexpected data type for atom value: ~p~n",
+                        [Value]),
   Value.
 
 
 %%--------------------------------------------------------------------
-%% @doc Return the module to use for node discovery.
-%% @spec backend_module() -> module() | undefined
+%% @doc
+%% Return the passed in value as an integer.
+%% @end
+%%--------------------------------------------------------------------
+-spec as_integer(binary() | integer() | string()) -> integer().
+as_integer([]) -> undefined;
+as_integer(Value) when is_binary(Value) ->
+  list_to_integer(as_string(Value));
+as_integer(Value) when is_list(Value) ->
+  list_to_integer(Value);
+as_integer(Value) when is_integer(Value) ->
+  Value;
+as_integer(Value) ->
+  autocluster_log:error("Unexpected data type for integer value: ~p~n",
+                        [Value]),
+  Value.
+
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Return the passed in value as a string.
+%% @end
+%%--------------------------------------------------------------------
+-spec as_string(Value :: atom() | binary() | integer() | string())
+    -> string().
+as_string([]) -> "";
+as_string(Value) when is_atom(Value) ->
+  as_string(atom_to_list(Value));
+as_string(Value) when is_binary(Value) ->
+  as_string(binary_to_list(Value));
+as_string(Value) when is_integer(Value) ->
+  as_string(integer_to_list(Value));
+as_string(Value) when is_list(Value) ->
+  lists:flatten(Value);
+as_string(Value) ->
+  autocluster_log:error("Unexpected data type for list value: ~p~n",
+                        [Value]),
+  Value.
+
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Return the module to use for node discovery.
 %% @end
 %%--------------------------------------------------------------------
 -spec backend_module() -> module() | undefined.
@@ -73,8 +91,8 @@ backend_module() ->
 
 %%--------------------------------------------------------------------
 %% @private
-%% @doc Return the module to use for node discovery.
-%% @spec backend_module(atom()) -> module() | undefined
+%% @doc
+%% Return the module to use for node discovery.
 %% @end
 %%--------------------------------------------------------------------
 -spec backend_module(atom()) -> module() | undefined.
@@ -82,7 +100,7 @@ backend_module(aws)          -> autocluster_aws;
 backend_module(consul)       -> autocluster_consul;
 backend_module(dns)          -> autocluster_dns;
 backend_module(etcd)         -> autocluster_etcd;
-backend_module(unconfigured) -> undefined.
+backend_module(_)            -> undefined.
 
 
 %%--------------------------------------------------------------------
@@ -96,10 +114,12 @@ node_hostname() ->
   Hostname.
 
 
-%% @spec node_name(mixed) -> atom()
-%% @doc Return the proper node name for clustering purposes
+%%--------------------------------------------------------------------
+%% @doc
+%% Return the proper node name for clustering purposes
 %% @end
-%%
+%%--------------------------------------------------------------------
+-spec node_name(Value :: atom() | binary() | string()) -> atom().
 node_name(Value) ->
   Host = case autocluster_config:get(longname) of
     true  -> as_string(Value);
@@ -113,20 +133,26 @@ node_name(Value) ->
   list_to_atom(string:join([node_prefix(), Host], "@")).
 
 
-%% @spec node_prefix() -> string()
-%% @doc Extract the "local part" of the ``RABBITMQ_NODENAME`` environment
-%%      variable, if set, otherwise use the default node name value (rabbit).
+%%--------------------------------------------------------------------
+%% @doc
+%% Extract the "local part" of the ``RABBITMQ_NODENAME`` environment
+%% variable, if set, otherwise use the default node name value
+%% (rabbit).
 %% @end
-%%
+%%--------------------------------------------------------------------
+-spec node_prefix() -> string().
 node_prefix() ->
   Value = autocluster_config:get(node_name),
   lists:nth(1, string:tokens(Value, "@")).
 
 
-%% @spec parse_port(mixed) -> integer()
-%% @doc Returns the port, even if Docker linking overwrites a configuration
-%%      value to be a URI instead of numeric value
+%%--------------------------------------------------------------------
+%% @doc
+%% Returns the port, even if Docker linking overwrites a configuration
+%% value to be a URI instead of numeric value
 %% @end
-%%
-parse_port(Value) when is_list(Value) -> as_integer(lists:last(string:tokens(Value, ":")));
+%%--------------------------------------------------------------------
+-spec parse_port(Value :: integer() | string()) -> integer().
+parse_port(Value) when is_list(Value) ->
+  as_integer(lists:last(string:tokens(Value, ":")));
 parse_port(Value) -> as_integer(Value).
