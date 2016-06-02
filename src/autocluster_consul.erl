@@ -63,10 +63,6 @@ nodelist() ->
   end.
 
 
-
-
-
-
 %% @spec register() -> ok|{error, Reason :: string()}
 %% @doc Register with Consul as providing rabbitmq service
 %% @end
@@ -76,7 +72,7 @@ register() ->
                               autocluster_config:get(consul_host),
                               autocluster_config:get(consul_port),
                               [v1, agent, service, register],
-                              acl_args(),
+                              maybe_add_acl([]),
                               registration_body()) of
     {ok, _} -> ok;
     Error   -> Error
@@ -93,10 +89,10 @@ send_health_check_pass() ->
                              autocluster_config:get(consul_host),
                              autocluster_config:get(consul_port),
                              [v1, agent, check, pass, Service],
-                             acl_args()) of
+                             maybe_add_acl([])) of
     {ok, []} -> ok;
     {error, Reason} ->
-      autocluster_log:debug("Error updating Consul health check: ~p", [Reason]),
+      autocluster_log:error("Error updating Consul health check: ~p", [Reason]),
       ok
   end.
 
@@ -111,21 +107,21 @@ unregister() ->
                              autocluster_config:get(consul_host),
                              autocluster_config:get(consul_port),
                              [v1, agent, service, deregister, Service],
-                             acl_args()) of
+                             maybe_add_acl([])) of
     {ok, _} -> ok;
     Error   -> Error
   end.
 
 
 %% @private
-%% @spec acl_args() -> list()
-%% @doc Return a proplist of acl, Value if consul_acl is set
+%% @spec maybe_add_acl(QArgs :: list()) -> list()
+%% @doc If configured, add the ACL token to the query arguments.
 %% @end
 %%
-acl_args() ->
-  case autocluster_config:get(consul_acl) of
-    "undefined" -> [];
-    ACL         -> [{token, ACL}]
+maybe_add_acl(QArgs) ->
+  case autocluster_config:get(consul_acl_token) of
+    "undefined" -> QArgs;
+    ACL         -> lists:append(QArgs, [{token, ACL}])
   end.
 
 
@@ -155,13 +151,21 @@ extract_nodes([{struct, H}|T], Nodes) ->
   end.
 
 
+%% @private
+%% @spec node_list_qargs() -> list
+%% @doc Build the query argument list required to fetch the node list from Consul
+%% @end
+%%
 node_list_qargs() ->
-  node_list_qargs(autocluster_config:get(cluster_name), acl_args()).
+  maybe_add_acl(node_list_qargs(autocluster_config:get(cluster_name))).
 
-node_list_qargs("undefined", []) -> [passing];
-node_list_qargs("undefined", ACLs) -> [passing, ACLs];
-node_list_qargs(Cluster, []) -> [passing, {tag, Cluster}];
-node_list_qargs(Cluster, ACLs) -> [passing, {tag, Cluster}, ACLs].
+%% @private
+%% @spec node_list_qargs(ClusterName :: string()) -> list
+%% @doc Build the query argument list required to fetch the node list from Consul
+%% @end
+%%
+node_list_qargs("undefined") -> [passing];
+node_list_qargs(Cluster) -> [passing, {tag, Cluster}].
 
 
 %% @private
