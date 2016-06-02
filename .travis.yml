@@ -2,6 +2,7 @@ sudo: required
 addons:
   apt:
     packages:
+    - curl
     - xsltproc
 language: erlang
 services:
@@ -15,11 +16,20 @@ otp_release:
 - 18.3
 cache:
   apt: true
-before_script:
+before_install:
 - ((ps aux |grep [r]abbit) || /bin/true)
 - ((sudo service rabbitmq stop) || /bin/true)
+- mkdir -p bin
+- curl -o bin/rebar3 https://s3.amazonaws.com/rebar3/rebar3
+- curl -o bin/rebar https://github.com/rebar/rebar/releases/download/2.6.1/rebar
+- chmod u+x bin/rebar bin/rebar3
+- export PATH=$PATH:$PWD/bin
+before_script:
 - (test "$TRAVIS_TAG" && git checkout "$TRAVIS_TAG") || (test "$TRAVIS_BRANCH" && git checkout "$TRAVIS_BRANCH")
-script: make test
+script: ./rebar3 eunit
+after_success:
+  - bin/covertool -cover _build/test/cover/eunit.coverdata -appname rabbitmq-autocluster -output cobertura.xml
+  - codecov
 before_deploy:
 - make clean
 - make dist
