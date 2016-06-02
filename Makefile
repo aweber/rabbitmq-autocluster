@@ -2,7 +2,7 @@ PROJECT = autocluster
 
 DEPS = rabbit rabbitmq_aws
 
-TEST_DEPS = rabbit
+TEST_DEPS = rabbit meck
 
 DEP_PLUGINS = rabbit_common/mk/rabbitmq-plugin.mk
 
