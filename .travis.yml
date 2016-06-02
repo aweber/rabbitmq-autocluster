@@ -4,6 +4,8 @@ addons:
     packages:
     - xsltproc
 language: erlang
+services:
+  - docker
 otp_release:
 - 17.5
 - 18.0
@@ -13,6 +15,8 @@ otp_release:
 - 18.3
 cache:
   apt: true
+env:
+  secure: "HUaHfuif/IOo7FRrY25oky1RwLVh4Mm2hLbtEtB3IeaxzoE//wengYiBNcxkXLPX1PnEUV5tsrCtlfa0a6i1LrOYfaGPk+8n6hmAvYMbpPqDnRCOyzorMYxDohBEJpbCT+RctIFWVPRV2wDN1SrQwTlnlL7sXZJ3oAMDHuzhLt0="
 before_script:
 - ((ps aux |grep [r]abbit) || /bin/true)
 - ((sudo service rabbitmq stop) || /bin/true)
@@ -22,12 +26,19 @@ before_deploy:
 - make clean
 - make dist
 - tar cvfz autocluster-${TRAVIS_TAG}.tgz plugins/autocluster-${TRAVIS_TAG}.ez plugins/rabbitmq_aws-*.ez
+- docker build -t aweber/rabbitmq-autocluster:${TRAVIS_TAG}
 deploy:
-  provider: releases
-  api_key:
-    secure: ktklMK+XMOteFt+m9NHhVqKkA1Wo8f9L/cJphUmBMgb3TS+4+vAU50yY8omIyprS8poc3mBWxjYD9p9xdeDnXY2tiFrLDKCWU/jbH3awD0uL6W0Di8BYAVOGhr2Jjjp6gi/B67wHtCtzEoSSNNfMMZ+RWf4GZjJ96NXOLhPRx4k=
-  file: autocluster-${TRAVIS_TAG}.tgz
-  on:
-    erlang: 17.5
-    tags: true
-    repo: aweber/rabbitmq-autocluster
+  - provider: releases
+    api_key:
+      secure: ktklMK+XMOteFt+m9NHhVqKkA1Wo8f9L/cJphUmBMgb3TS+4+vAU50yY8omIyprS8poc3mBWxjYD9p9xdeDnXY2tiFrLDKCWU/jbH3awD0uL6W0Di8BYAVOGhr2Jjjp6gi/B67wHtCtzEoSSNNfMMZ+RWf4GZjJ96NXOLhPRx4k=
+    file: autocluster-${TRAVIS_TAG}.tgz
+    on:
+      condition: "$TRAVIS_OTP_RELEASE = 17.5"
+      tags: true
+      repo: aweber/rabbitmq-autocluster
+  - provider: script
+    script: deploy-container.sh
+    on:
+      condition: "$TRAVIS_OTP_RELEASE = 17.5"
+      tags: true
+      repo: aweber/rabbitmq-autocluster
