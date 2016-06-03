@@ -169,16 +169,57 @@ node_hostname() ->
 %%--------------------------------------------------------------------
 -spec node_name(Value :: atom() | binary() | string()) -> atom().
 node_name(Value) ->
-  Host = case autocluster_config:get(longname) of
-    true  -> as_string(Value);
-    false ->
-      Parts = string:tokens(as_string(Value), "."),
-      case length(Parts) of
-        1 -> as_string(Value);
-        _ -> as_string(lists:nth(1, Parts))
-      end
-  end,
-  list_to_atom(string:join([node_prefix(), Host], "@")).
+  list_to_atom(string:join([node_prefix(),
+                            node_name_parse(as_string(Value))],
+                           "@")).
+
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Parse the value passed into nodename, checking if it's an ip
+%% address. If so, return it. If not, then check to see if longname
+%% support is turned on. if so, return it. If not, extract the left
+%% most part of the name, delimited by periods.
+%% @end
+%%--------------------------------------------------------------------
+-spec node_name_parse(Value :: string()) -> atom().
+node_name_parse(Value) ->
+  case inet:parse_ipv4strict_address(Value) of
+    {ok, _} ->
+      Value;
+    {error, einval} ->
+      node_name_parse(autocluster_config:get(longname), Value)
+  end.
+
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Continue the parsing logic from node_name_parse/1. This is where
+%% result of the IPv4 check is processed.
+%% @end
+%%--------------------------------------------------------------------
+-spec node_name_parse(IsIPv4 :: true | false, Value :: string())
+    -> atom().
+node_name_parse(true, Value) -> Value;
+node_name_parse(false, Value) ->
+  Parts = string:tokens(Value, "."),
+  node_name_parse(length(Parts), Value, Parts).
+
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Properly deal with returning the hostname if it's made up of
+%% multiple segments like www.rabbitmq.com, returning www, or if it's
+%% only a single segment, return that.
+%% @end
+%%--------------------------------------------------------------------
+-spec node_name_parse(Segments :: integer(),
+                      Value :: string(),
+                      Parts :: list())
+    -> atom().
+node_name_parse(1, Value, _) -> Value;
+node_name_parse(_, _, Parts) ->
+  as_string(lists:nth(1, Parts)).
 
 
 %%--------------------------------------------------------------------

@@ -25,10 +25,11 @@
             {addr,{9760,152,49152,0,16,150,0,1449}},
             {netmask,{65535,65535,65535,65535,65535,65535,0,0}}]}]}).
 
+
 as_atom_test_() ->
   {
     foreach,
-    fun () ->
+    fun() ->
       autocluster_testing:reset(),
       meck:new(autocluster_log, []),
       [autocluster_log]
@@ -43,7 +44,7 @@ as_atom_test_() ->
           meck:expect(autocluster_log, error,
             fun(_Message, Args) -> ?assertEqual([42], Args) end),
           ?assertEqual(42, autocluster_util:as_atom(42)),
-          meck:validate(autocluster_log)
+          ?assert(meck:validate(autocluster_log))
         end
       }
     ]
@@ -53,7 +54,7 @@ as_atom_test_() ->
 as_integer_test_() ->
   {
     foreach,
-    fun () ->
+    fun() ->
       autocluster_testing:reset(),
       meck:new(autocluster_log, []),
       [autocluster_log]
@@ -68,7 +69,7 @@ as_integer_test_() ->
           meck:expect(autocluster_log, error,
             fun(_Message, Args) -> ?assertEqual(['42'], Args) end),
           ?assertEqual('42', autocluster_util:as_integer('42')),
-          meck:validate(autocluster_log)
+          ?assert(meck:validate(autocluster_log))
         end
       }
     ]
@@ -78,7 +79,7 @@ as_integer_test_() ->
 as_string_test_() ->
   {
     foreach,
-    fun () ->
+    fun() ->
       autocluster_testing:reset(),
       meck:new(autocluster_log, []),
       [autocluster_log]
@@ -94,7 +95,7 @@ as_string_test_() ->
           meck:expect(autocluster_log, error,
             fun(_Message, Args) -> ?assertEqual([#config{}], Args) end),
           ?assertEqual(#config{}, autocluster_util:as_string(#config{})),
-          meck:validate(autocluster_log)
+          ?assert(meck:validate(autocluster_log))
         end
       }
     ]
@@ -141,7 +142,7 @@ backend_module_test_() ->
 nic_ipaddr_test_() ->
   {
     foreach,
-    fun () ->
+    fun() ->
       autocluster_testing:reset(),
       meck:new(inet, [unstick, passthrough]),
       [inet]
@@ -153,14 +154,14 @@ nic_ipaddr_test_() ->
         fun() ->
           meck:expect(inet, getifaddrs, fun() -> ?INTERFACES end),
           ?assertEqual({ok, "10.1.1.128"}, autocluster_util:nic_ipv4("en0")),
-          meck:validate(inet)
+          ?assert(meck:validate(inet))
         end
       },
       {
         "nic not found", fun() ->
           meck:expect(inet, getifaddrs, fun() -> ?INTERFACES end),
           ?assertEqual({error, not_found}, autocluster_util:nic_ipv4("en1")),
-          meck:validate(inet)
+          ?assert(meck:validate(inet))
         end
       }
     ]
@@ -170,7 +171,7 @@ nic_ipaddr_test_() ->
 node_hostname_test_() ->
   {
     foreach,
-    fun () ->
+    fun() ->
       autocluster_testing:reset(),
       meck:new(inet, [unstick, passthrough]),
       [inet]
@@ -190,7 +191,7 @@ node_hostname_test_() ->
 node_name_test_() ->
   {
     foreach,
-    fun () ->
+    fun() ->
       autocluster_testing:reset(),
       meck:new(autocluster_log, []),
       [autocluster_log]
@@ -205,7 +206,8 @@ node_name_test_() ->
           os:putenv("RABBITMQ_USE_LONGNAME", "true"),
           ?assertEqual('rabbit@node3.foo.bar', autocluster_util:node_name("node3.foo.bar"))
         end
-      }
+      },
+      {"ipaddr", fun() -> ?assertEqual('rabbit@172.20.1.4', autocluster_util:node_name("172.20.1.4")) end}
     ]
   }.
 
