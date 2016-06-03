@@ -36,12 +36,14 @@ deploy:
   api_key:
     secure: ktklMK+XMOteFt+m9NHhVqKkA1Wo8f9L/cJphUmBMgb3TS+4+vAU50yY8omIyprS8poc3mBWxjYD9p9xdeDnXY2tiFrLDKCWU/jbH3awD0uL6W0Di8BYAVOGhr2Jjjp6gi/B67wHtCtzEoSSNNfMMZ+RWf4GZjJ96NXOLhPRx4k=
   file: autocluster-${TRAVIS_TAG}.tgz
+  skip_cleanup: true
   on:
     condition: "$TRAVIS_OTP_RELEASE = 17.5"
     tags: true
     repo: aweber/rabbitmq-autocluster
 - provider: script
   script: deploy-container.sh
+  skip_cleanup: true
   on:
     condition: "$TRAVIS_OTP_RELEASE = 17.5"
     tags: true
