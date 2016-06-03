@@ -30,7 +30,7 @@ before_deploy:
 - make clean
 - make dist
 - tar cvfz autocluster-${TRAVIS_TAG}.tgz plugins/autocluster-${TRAVIS_TAG}.ez plugins/rabbitmq_aws-*.ez
-- docker build -t aweber/rabbitmq-autocluster:${TRAVIS_TAG}
+- docker build -t aweber/rabbitmq-autocluster:${TRAVIS_TAG} .
 deploy:
   - provider: releases
     api_key:
