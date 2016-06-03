@@ -12,6 +12,7 @@
          {config, autocluster_failure,   "AUTOCLUSTER_FAILURE",    ignore,       atom,    false},
          {config, startup_delay,         "AUTOCLUSTER_DELAY",      5,            integer, false},
          {config, cluster_cleanup,       "AUTOCLUSTER_CLEANUP",    false,        atom,    false},
+         {config, autocluster_log_level, "AUTOCLUSTER_LOG_LEVEL",  info,         atom,    false},
          {config, cleanup_interval,      "CLEANUP_INTERVAL",       60,           integer, false},
          {config, cleanup_warn_only,     "CLEANUP_WARN_ONLY",      true,         atom,    false},
          {config, longname,              "RABBITMQ_USE_LONGNAME",  false,        atom,    false},
