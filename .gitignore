@@ -17,3 +17,9 @@ docker/rabbitmq_autocluster*ez
 cover
 plugins
 autocluster.d
+bin/rebar
+rebar.lock
+cobertura.xml
+*.tgz
+_build
+
