@@ -16,7 +16,7 @@ start_link_test_() ->
         "supervisor start_link", fun() ->
           meck:expect(supervisor, start_link, fun(_, _, _) -> {ok, test_result} end),
           ?assertEqual({ok, test_result}, autocluster_sup:start_link()),
-          meck:validate(supervisor)
+          ?assert(meck:validate(supervisor))
         end}
     ]
   }.
