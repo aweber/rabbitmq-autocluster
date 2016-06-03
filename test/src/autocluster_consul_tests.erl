@@ -78,7 +78,14 @@ registration_body1_test_() ->
                         [{'Notes','RabbitMQ Auto-Cluster Plugin TTL Check'},
                          {'TTL','30s'}]}],
         ?assertEqual(Expectation, autocluster_consul:registration_body([]))
-       end}
+       end},
+      {"with addr set", fun() ->
+        os:putenv("CONSUL_SVC_TTL", ""),
+        Expectation = [{'ID','rabbitmq'},
+                       {'Name',rabbitmq},
+                       {'Port',5672}],
+        ?assertEqual(Expectation, autocluster_consul:registration_body([]))
+      end}
     ]
   }.
 
