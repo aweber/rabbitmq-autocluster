@@ -5,6 +5,26 @@
 -include("autocluster.hrl").
 
 
+-define(INTERFACES,
+  {ok, [{"lo0",
+          [{flags,[up,loopback,running,multicast]},
+            {addr,{0,0,0,0,0,0,0,1}},
+            {netmask,{65535,65535,65535,65535,65535,65535,65535,65535}},
+            {addr,{127,0,0,1}},
+            {netmask,{255,0,0,0}},
+            {addr,{65152,0,0,0,0,0,0,1}},
+            {netmask,{65535,65535,65535,65535,0,0,0,0}}]},
+        {"en0",
+          [{flags,[up,broadcast,running,multicast]},
+            {hwaddr,[100,200,100,200,100,128]},
+            {addr,{65540,0,0,0,47848,22271,65097,640}},
+            {netmask,{65535,65535,65535,65535,0,0,0,0}},
+            {addr,{10,1,1,128}},
+            {netmask,{255,255,0,0}},
+            {broadaddr,{10,229,255,255}},
+            {addr,{9760,152,49152,0,16,150,0,1449}},
+            {netmask,{65535,65535,65535,65535,65535,65535,0,0}}]}]}).
+
 as_atom_test_() ->
   {
     foreach,
@@ -114,6 +134,35 @@ backend_module_test_() ->
       {"unconfigured", fun() ->
           ?assertEqual(undefined, autocluster_util:backend_module())
        end}
+    ]
+  }.
+
+
+nic_ipaddr_test_() ->
+  {
+    foreach,
+    fun () ->
+      autocluster_testing:reset(),
+      meck:new(inet, [unstick, passthrough]),
+      [inet]
+    end,
+    fun autocluster_testing:on_finish/1,
+    [
+      {
+        "parsing datastructure",
+        fun() ->
+          meck:expect(inet, getifaddrs, fun() -> ?INTERFACES end),
+          ?assertEqual({ok, "10.1.1.128"}, autocluster_util:nic_ipv4("en0")),
+          meck:validate(inet)
+        end
+      },
+      {
+        "nic not found", fun() ->
+          meck:expect(inet, getifaddrs, fun() -> ?INTERFACES end),
+          ?assertEqual({error, not_found}, autocluster_util:nic_ipv4("en1")),
+          meck:validate(inet)
+        end
+      }
     ]
   }.
 

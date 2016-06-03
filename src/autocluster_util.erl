@@ -10,6 +10,7 @@
          as_integer/1,
          as_string/1,
          backend_module/0,
+         nic_ipv4/1,
          node_hostname/0,
          node_name/1,
          parse_port/1]).
@@ -102,10 +103,36 @@ backend_module(dns)          -> autocluster_dns;
 backend_module(etcd)         -> autocluster_etcd;
 backend_module(_)            -> undefined.
 
+%%--------------------------------------------------------------------
+%% @doc
+%% Return the IP address for the current node for the specified
+%% network interface controller.
+%% @end
+%%--------------------------------------------------------------------
+-spec nic_ipv4(Device :: string())
+    -> {ok, string()} | {error, not_found}.
+nic_ipv4(Device) ->
+  {ok, Interfaces} = inet:getifaddrs(),
+  nic_ipv4(Device, Interfaces).
+
+nic_ipv4(_, []) -> {error, not_found};
+nic_ipv4(Device, [{Interface, Opts}|_]) when Interface =:= Device ->
+  {ok, nic_ipv4_address(Opts)};
+nic_ipv4(Device, [_|T]) ->
+  nic_ipv4(Device,T).
+
+
+nic_ipv4_address([]) -> {error, not_found};
+nic_ipv4_address([{addr, {A,B,C,D}}|T]) ->
+  inet_parse:ntoa({A,B,C,D});
+nic_ipv4_address([_|T]) ->
+  nic_ipv4_address(T).
+
+
 
 %%--------------------------------------------------------------------
-%% @doc Return the hostname for the current node (without the tuple)
-%% @spec node_hostname() -> string()
+%% @doc
+%% Return the hostname for the current node (without the tuple)
 %% @end
 %%--------------------------------------------------------------------
 -spec node_hostname() -> string().
