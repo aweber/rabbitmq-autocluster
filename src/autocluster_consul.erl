@@ -16,6 +16,8 @@
 -export([init/0,
          send_health_check_pass/0]).
 
+%% Ignore this (is used so we can stub with meck in tests)
+-export([build_registration_body/0]).
 
 %% Export all for unit tests
 -ifdef(TEST).
@@ -218,7 +220,7 @@ node_list_qargs(Cluster) -> [passing, {tag, Cluster}].
 %%--------------------------------------------------------------------
 -spec registration_body() -> {ok, Body :: binary()} | {error, atom()}.
 registration_body() ->
-  Payload = ?MODULE:build_registration_body(),
+  Payload = autocluster_consul:build_registration_body(),
   registration_body(rabbit_misc:json_encode(Payload)).
 
 
