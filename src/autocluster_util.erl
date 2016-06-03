@@ -21,6 +21,10 @@
 -compile(export_all).
 -endif.
 
+-type ifopt() :: {flag,[atom()]} | {addr, inet:ip_address()} |
+                 {netmask,inet:ip_address()} | {broadaddr,inet:ip_address()} |
+                 {dstaddr,inet:ip_address()} | {hwaddr,[byte()]}.
+
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -90,6 +94,7 @@ as_string(Value) ->
 backend_module() ->
   backend_module(autocluster_config:get(backend)).
 
+
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
@@ -103,6 +108,7 @@ backend_module(dns)          -> autocluster_dns;
 backend_module(etcd)         -> autocluster_etcd;
 backend_module(_)            -> undefined.
 
+
 %%--------------------------------------------------------------------
 %% @doc
 %% Return the IP address for the current node for the specified
@@ -115,6 +121,15 @@ nic_ipv4(Device) ->
   {ok, Interfaces} = inet:getifaddrs(),
   nic_ipv4(Device, Interfaces).
 
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Parse the interface out of the list of interfaces, returning the
+%% IPv4 address if found.
+%% @end
+%%--------------------------------------------------------------------
+-spec nic_ipv4(Device :: string(), Interfaces :: list())
+    -> {ok, string()} | {error, not_found}.
 nic_ipv4(_, []) -> {error, not_found};
 nic_ipv4(Device, [{Interface, Opts}|_]) when Interface =:= Device ->
   {ok, nic_ipv4_address(Opts)};
@@ -122,12 +137,18 @@ nic_ipv4(Device, [_|T]) ->
   nic_ipv4(Device,T).
 
 
+%%--------------------------------------------------------------------
+%% @doc
+%% Return the formatted IPv4 address out of the list of addresses
+%% for the interface.
+%% @end
+%%--------------------------------------------------------------------
+-spec nic_ipv4_address([ifopt()]) -> {ok, string()} | {error, not_found}.
 nic_ipv4_address([]) -> {error, not_found};
-nic_ipv4_address([{addr, {A,B,C,D}}|T]) ->
+nic_ipv4_address([{addr, {A,B,C,D}}|_]) ->
   inet_parse:ntoa({A,B,C,D});
 nic_ipv4_address([_|T]) ->
   nic_ipv4_address(T).
-
 
 
 %%--------------------------------------------------------------------
