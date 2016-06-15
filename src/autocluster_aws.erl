@@ -19,7 +19,7 @@
 -include_lib("rabbitmq_aws/include/rabbitmq_aws.hrl").
 
 -define(INSTANCE_ID_URL,
-        "http://instance-data/latest/meta-data/instance-id").
+        "http://169.254.169.254/latest/meta-data/instance-id").
 -define(AUTOSCALING_DESCRIBE_INSTANCES,
         "/?Action=DescribeAutoScalingInstances&Version=2011-01-01").
 
