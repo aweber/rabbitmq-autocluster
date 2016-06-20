@@ -1,32 +1,43 @@
-sudo: false
-language: erlang
-otp_release:
-  - 17.5
+sudo: required
 addons:
   apt:
     packages:
-      - xsltproc
-env:
-  - BUILD_DIR=$HOME/rabbitmq-public-umbrella CONSUL_VERSION=0.5.2 RABBIT_TAG=rabbitmq_v3_5_6
-install:
-  - "$TRAVIS_BUILD_DIR/travis-umbrella-setup.sh"
-  - "$TRAVIS_BUILD_DIR/travis-install-consul.sh"
-script: cd $BUILD_DIR/autocluster && make test
-before_deploy:
-  - cd $BUILD_DIR/autocluster
-  - VERSION=$TRAVIS_TAG make
-  - mkdir -p $HOME/dpl
-  - cd $HOME/dpl
+    - curl
+    - xsltproc
+language: erlang
+services:
+  - docker
+otp_release:
+- 17.5
 cache:
   apt: true
-  directories:
-  - "$HOME/consul"
-  - "$BUILD_DIR"
+before_install:
+- ((ps aux |grep [r]abbit) || /bin/true)
+- ((sudo service rabbitmq stop) || /bin/true)
+- mkdir -p bin
+- curl -Ls -o bin/rebar3 https://s3.amazonaws.com/rebar3/rebar3
+- curl -Ls -o bin/rebar https://github.com/rebar/rebar/releases/download/2.6.1/rebar
+- chmod u+x bin/rebar bin/rebar3
+- export PATH=$PATH:$PWD/bin
+- pip install --user codecov
+before_script:
+- (test "$TRAVIS_TAG" && git checkout "$TRAVIS_TAG") || (test "$TRAVIS_BRANCH" && git checkout "$TRAVIS_BRANCH")
+script: rebar3 eunit
+after_success:
+- covertool -cover _build/test/cover/eunit.coverdata -appname rabbitmq-autocluster -output cobertura.xml
+- codecov
+before_deploy:
+- make clean
+- make dist
+- tar cvfz autocluster-${TRAVIS_TAG}.tgz plugins/autocluster-${TRAVIS_TAG}.ez plugins/rabbitmq_aws-*.ez
+- echo "TRAVIS_OTP_RELEASE = ${TRAVIS_OTP_RELEASE}"
 deploy:
   provider: releases
   api_key:
     secure: ktklMK+XMOteFt+m9NHhVqKkA1Wo8f9L/cJphUmBMgb3TS+4+vAU50yY8omIyprS8poc3mBWxjYD9p9xdeDnXY2tiFrLDKCWU/jbH3awD0uL6W0Di8BYAVOGhr2Jjjp6gi/B67wHtCtzEoSSNNfMMZ+RWf4GZjJ96NXOLhPRx4k=
-  file: "$BUILD_DIR/autocluster/dist/autocluster-${TRAVIS_TAG}.ez"
+  file: autocluster-${TRAVIS_TAG}.tgz
+  skip_cleanup: true
   on:
+    condition: "$TRAVIS_OTP_RELEASE = 17.5"
     tags: true
     repo: aweber/rabbitmq-autocluster

@@ -1,10 +1,24 @@
 {application, autocluster,
- [
-  {description, "RabbitMQ Automatic Clustering Plugin"},
-  {vsn, "%%VSN%%"},
-  {env, []},
-  {modules, []},
-  {registered, []},
-  {applications, [kernel, stdlib, rabbit, inets]}
- ]
+  [
+    {description, "RabbitMQ Automatic Clustering Plugin"},
+    {vsn, "0.6.1"},
+    {env, []},
+    {mod, {autocluster_app, []}},
+    {modules, [
+      autocluster,
+      autocluster_app,
+      autocluster_aws,
+      autocluster_backend,
+      autocluster_cleanup,
+      autocluster_config,
+      autocluster_consul,
+      autocluster_dns,
+      autocluster_etcd,
+      autocluster_httpc,
+      autocluster_log,
+      autocluster_sup,
+      autocluster_util]},
+    {registered, [autocluster_app, autocluster_sup, autocluster_cleanup]},
+    {applications, [kernel, stdlib, rabbit, inets, rabbitmq_aws]}
+  ]
 }.

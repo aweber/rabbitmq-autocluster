@@ -1,6 +1,6 @@
 %%==============================================================================
 %% @author Gavin M. Roy <gavinr@aweber.com>
-%% @copyright 2015 AWeber Communications
+%% @copyright 2015-2016 AWeber Communications
 %% @end
 %%==============================================================================
 -module(autocluster_httpc).
@@ -9,9 +9,16 @@
 -export([build_query/1,
          build_path/1,
          build_uri/5,
+         delete/6,
          get/5,
          post/6,
          put/6]).
+
+%% Export all for unit tests
+-ifdef(TEST).
+-compile(export_all).
+-endif.
+
 
 -define(CONTENT_JSON, "application/json").
 -define(CONTENT_URLENCODED, "application/x-www-form-urlencoded").
@@ -187,14 +194,14 @@ decode_body(?CONTENT_JSON, Body) ->
 %% @end
 %%
 parse_response({error, Reason}) ->
-  autocluster_log:error("HTTP Error ~p", [Reason]),
+  autocluster_log:debug("HTTP Error ~p", [Reason]),
   {error, Reason};
 
 parse_response({ok, 200, Body})  -> {ok, decode_body(?CONTENT_JSON, Body)};
 parse_response({ok, 201, Body})  -> {ok, decode_body(?CONTENT_JSON, Body)};
 parse_response({ok, 204, _})     -> {ok, []};
 parse_response({ok, Code, Body}) ->
-  autocluster_log:error("HTTP Response (~p) ~s", [Code, Body]),
+  autocluster_log:debug("HTTP Response (~p) ~s", [Code, Body]),
   {error, integer_to_list(Code)};
 
 parse_response({ok, {{_,200,_},Headers,Body}}) ->
@@ -203,7 +210,7 @@ parse_response({ok,{{_,201,_},Headers,Body}}) ->
   {ok, decode_body(proplists:get_value("content-type", Headers, ?CONTENT_JSON), Body)};
 parse_response({ok,{{_,204,_},_,_}}) -> {ok, []};
 parse_response({ok,{{_Vsn,Code,_Reason},_,Body}}) ->
-  autocluster_log:error("HTTP Response (~p) ~s", [Code, Body]),
+  autocluster_log:debug("HTTP Response (~p) ~s", [Code, Body]),
   {error, integer_to_list(Code)}.
 
 

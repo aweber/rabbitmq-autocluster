@@ -1,6 +1,6 @@
 %%==============================================================================
 %% @author Gavin M. Roy <gavinr@aweber.com>
-%% @copyright 2015 AWeber Communications
+%% @copyright 2015-2016 AWeber Communications
 %% @end
 %%==============================================================================
 -module(autocluster_dns).
@@ -12,8 +12,10 @@
          register/0,
          unregister/0]).
 
-%% test exports
--export([extract_host/1]).
+%% Export all for unit tests
+-ifdef(TEST).
+-compile(export_all).
+-endif.
 
 -include("autocluster.hrl").
 

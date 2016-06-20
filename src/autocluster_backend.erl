@@ -1,12 +1,12 @@
 %%==============================================================================
 %% @author Gavin M. Roy <gavinr@aweber.com>
-%% @copyright 2015 AWeber Communications
+%% @copyright 2015-2016 AWeber Communications
 %% @end
 %%==============================================================================
 -module(autocluster_backend).
 
--callback nodelist() -> {'ok', Nodes :: list()}|{'error', Reason :: string()}.
+-callback nodelist() -> {ok, Nodes :: list()}|{error, Reason :: string()}.
 
--callback register() -> 'ok'|{'error', Reason :: string()}.
+-callback register() -> ok|{error, Reason :: string()}.
 
--callback unregister() -> 'ok'|{'error', Reason :: string()}.
+-callback unregister() -> ok|{error, Reason :: string()}.

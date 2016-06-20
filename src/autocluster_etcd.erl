@@ -1,6 +1,6 @@
 %%==============================================================================
 %% @author Gavin M. Roy <gavinr@aweber.com>
-%% @copyright 2015 AWeber Communications
+%% @copyright 2015-2016 AWeber Communications
 %% @end
 %%==============================================================================
 -module(autocluster_etcd).
@@ -12,17 +12,16 @@
          register/0,
          unregister/0]).
 
-%% test_exports
--export([base_path/0,
-         extract_nodes/1,
-         get_node_from_key/1,
-         node_path/0]).
-
--include("autocluster.hrl").
-
 %% For timer based health checking
 -export([init/0,
          set_etcd_node_key/0]).
+
+%% Export all for unit tests
+-ifdef(TEST).
+-compile(export_all).
+-endif.
+
+-include("autocluster.hrl").
 
 -rabbit_boot_step({?MODULE,
                    [{description, <<"Autocluster etcd Initialization">>},
