@@ -15,11 +15,10 @@ docker/rabbitmq_autocluster*ez
 .vagrant
 .idea
 cover
-plugins
+/plugins
 autocluster.d
 bin/rebar
 rebar.lock
 cobertura.xml
 *.tgz
 _build
-

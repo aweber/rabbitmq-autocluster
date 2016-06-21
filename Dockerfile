@@ -16,7 +16,7 @@ ENV RABBITMQ_VERSION=3.6.2 \
 
 RUN \
   apk --update add \
-    bash coreutils curl xz \
+    bash coreutils curl xz su-exec \
     erlang erlang-asn1 erlang-crypto erlang-eldap erlang-erts erlang-inets erlang-mnesia \
     erlang-os-mon erlang-public-key erlang-sasl erlang-ssl erlang-syntax-tools erlang-hipe erlang-xmerl && \
   curl -sL -o /tmp/rabbitmq-server-generic-unix-${RABBITMQ_VERSION}.tar.gz https://www.rabbitmq.com/releases/rabbitmq-server/v${RABBITMQ_VERSION}/rabbitmq-server-generic-unix-${RABBITMQ_VERSION}.tar.xz && \
@@ -37,10 +37,19 @@ RUN \
   chown -R rabbitmq /usr/lib/rabbitmq /var/lib/rabbitmq && \
   /usr/lib/rabbitmq/sbin/rabbitmq-plugins --offline enable \
     rabbitmq_management \
+    rabbitmq_management_visualiser \
+    rabbitmq_consistent_hash_exchange \
+    rabbitmq_federation \
+    rabbitmq_federation_management \
+    rabbitmq_mqtt \
+    rabbitmq_shovel \
+    rabbitmq_shovel_management \
+    rabbitmq_stomp \
+    rabbitmq_web_stomp \
     autocluster
 
 EXPOSE 4369 5671 5672 15672 25672
 
 VOLUME $HOME
-USER rabbitmq
-CMD /usr/lib/rabbitmq/sbin/rabbitmq-server
+ENTRYPOINT '/launch.sh'
+CMD ['rabbitmq-server']
