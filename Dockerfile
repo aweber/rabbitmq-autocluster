@@ -19,7 +19,7 @@ ENV RABBITMQ_VERSION=3.6.2 \
 
 RUN \
   apk --update add \
-    bash coreutils curl xz "su-exec>=0.2" \
+    coreutils curl xz "su-exec>=0.2" \
     erlang erlang-asn1 erlang-crypto erlang-eldap erlang-erts erlang-inets erlang-mnesia \
     erlang-os-mon erlang-public-key erlang-sasl erlang-ssl erlang-syntax-tools erlang-xmerl && \
   curl -sL -o /tmp/rabbitmq-server-generic-unix-${RABBITMQ_VERSION}.tar.gz https://www.rabbitmq.com/releases/rabbitmq-server/v${RABBITMQ_VERSION}/rabbitmq-server-generic-unix-${RABBITMQ_VERSION}.tar.xz && \
@@ -27,13 +27,13 @@ RUN \
   tar xf /tmp/rabbitmq-server-generic-unix-${RABBITMQ_VERSION}.tar.gz && \
   rm /tmp/rabbitmq-server-generic-unix-${RABBITMQ_VERSION}.tar.gz && \
   mv /usr/lib/rabbitmq_server-${RABBITMQ_VERSION} /usr/lib/rabbitmq && \
-  adduser -s /bin/bash -D -h /var/lib/rabbitmq rabbitmq && \
   apk --purge del curl tar gzip xz
 
 COPY root/ /
 
 # Fetch the external plugins and setup RabbitMQ
 RUN \
+  adduser -D -u 1000 -h $HOME rabbitmq rabbitmq && \
   cp /var/lib/rabbitmq/.erlang.cookie /root/ && \
   chown rabbitmq /var/lib/rabbitmq/.erlang.cookie && \
   chmod 0600 /var/lib/rabbitmq/.erlang.cookie /root/.erlang.cookie && \
