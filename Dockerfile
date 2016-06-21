@@ -1,4 +1,4 @@
-FROM alpine:edge
+FROM gliderlabs/alpine:3.4
 
 # Version of RabbitMQ to install
 ENV RABBITMQ_VERSION=3.6.2 \
@@ -12,13 +12,16 @@ ENV RABBITMQ_VERSION=3.6.2 \
     RABBITMQ_MNESIA_DIR=/var/lib/rabbitmq/mnesia \
     RABBITMQ_PID_FILE=/var/lib/rabbitmq/rabbitmq.pid \
     RABBITMQ_PLUGINS_DIR=/usr/lib/rabbitmq/plugins \
-    RABBITMQ_PLUGINS_EXPAND_DIR=/var/lib/rabbitmq/plugins
+    RABBITMQ_PLUGINS_EXPAND_DIR=/var/lib/rabbitmq/plugins \
+    LANG=en_US.UTF-8 \
+    # Set this so that CTRL+G works properly
+    TERM=xterm
 
 RUN \
   apk --update add \
-    bash coreutils curl xz su-exec \
+    bash coreutils curl xz "su-exec>=0.2" \
     erlang erlang-asn1 erlang-crypto erlang-eldap erlang-erts erlang-inets erlang-mnesia \
-    erlang-os-mon erlang-public-key erlang-sasl erlang-ssl erlang-syntax-tools erlang-hipe erlang-xmerl && \
+    erlang-os-mon erlang-public-key erlang-sasl erlang-ssl erlang-syntax-tools erlang-xmerl && \
   curl -sL -o /tmp/rabbitmq-server-generic-unix-${RABBITMQ_VERSION}.tar.gz https://www.rabbitmq.com/releases/rabbitmq-server/v${RABBITMQ_VERSION}/rabbitmq-server-generic-unix-${RABBITMQ_VERSION}.tar.xz && \
   cd /usr/lib/ && \
   tar xf /tmp/rabbitmq-server-generic-unix-${RABBITMQ_VERSION}.tar.gz && \
@@ -48,8 +51,7 @@ RUN \
     rabbitmq_web_stomp \
     autocluster
 
-EXPOSE 4369 5671 5672 15672 25672
-
 VOLUME $HOME
-ENTRYPOINT '/launch.sh'
-CMD ['rabbitmq-server']
+EXPOSE 4369 5671 5672 15672 25672
+ENTRYPOINT ["/launch.sh"]
+CMD ["rabbitmq-server"]
