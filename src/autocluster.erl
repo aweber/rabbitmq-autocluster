@@ -268,13 +268,33 @@ join_cluster_nodes(Nodes) ->
   application:stop(rabbit),
   mnesia:stop(),
   rabbit_mnesia:reset(),
-  rabbit_mnesia:join_cluster(lists:nth(1, Nodes),
-                             autocluster_config:get(node_type)),
+  process_join_result(
+    rabbit_mnesia:join_cluster(lists:nth(1, Nodes),
+                               autocluster_config:get(node_type))).
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Step 14: Check the result of joining to the cluster.
+%% @end
+%%--------------------------------------------------------------------
+-spec process_join_result(RabbitJoinResult) -> ok | error when
+      RabbitJoinResult :: ok | {ok, already_member} | {error, term()}.
+process_join_result({ok, already_member}) ->
+  %% Before https://github.com/rabbitmq/rabbitmq-server/pull/868 it
+  %% should be considered an error, but I'm not sure.
+  mnesia:start(),
+  rabbit:start(),
+  autocluster_log:debug("Was already joined."),
+  ok;
+process_join_result(ok) ->
   mnesia:start(),
   rabbit:start(),
   autocluster_log:debug("Cluster joined."),
-  ok.
-
+  ok;
+process_join_result({error, Reason}) ->
+  autocluster_log:warning("Failed to join to cluster: ~p", [Reason]),
+  startup_failure().
 
 %%--------------------------------------------------------------------
 %% @private
