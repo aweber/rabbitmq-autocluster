@@ -58,7 +58,7 @@ nodelist() ->
     {ok, Nodes}  ->
       NodeList = extract_nodes(Nodes),
       {ok, NodeList};
-    {error, 404} ->
+    {error, "404"} ->
       ok = make_etcd_directory(),
       nodelist();
     Error        -> Error
