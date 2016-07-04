@@ -1,7 +1,7 @@
 -module(autocluster_testing).
 
 %% API
--export([on_start/0, on_finish/1, reset/0]).
+-export([on_start/0, on_finish/1, reset/0, with_mock/2]).
 
 -include("autocluster.hrl").
 
@@ -28,3 +28,15 @@ reset([H|T]) ->
   os:unsetenv(H#config.os),
   maybe_reset_truncated_envvar(H#config.os, string:left(H#config.os, 9)),
   reset(T).
+
+with_mock(ModulesToMock, InitiatorOrTests) ->
+  {
+    setup,
+    fun() ->
+        autocluster_testing:reset(),
+        lists:foreach(fun(Mod) -> meck:new(Mod, []) end, ModulesToMock),
+        ModulesToMock
+    end,
+    fun on_finish/1,
+    InitiatorOrTests
+  }.
