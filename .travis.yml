@@ -1,31 +1,48 @@
-sudo: required
+# Anything except erlang - to prevent travis from calling rebar2 automatically
+language: ruby
+
 addons:
   apt:
     packages:
     - curl
     - xsltproc
-language: erlang
-services:
-  - docker
-otp_release:
-- 17.5
+
 cache:
   apt: true
-before_install:
-- ((ps aux |grep [r]abbit) || /bin/true)
-- ((sudo service rabbitmq stop) || /bin/true)
-- mkdir -p bin
-- curl -Ls -o bin/rebar3 https://s3.amazonaws.com/rebar3/rebar3
-- curl -Ls -o bin/rebar https://github.com/rebar/rebar/releases/download/2.6.1/rebar
-- chmod u+x bin/rebar bin/rebar3
-- export PATH=$PATH:$PWD/bin
-- pip install --user codecov
+  directories:
+    - $HOME/.cache/rebar3
+    - $HOME/.cache/rebar3-bin
+
+install:
+  - wget https://s3.amazonaws.com/travis-otp-releases/binaries/$(lsb_release -is | tr "A-Z" "a-z")/$(lsb_release -rs)/$(uname -m)/erlang-17.5-nonroot.tar.bz2
+  - mkdir -p ~/otp && tar -xf erlang-17.5-nonroot.tar.bz2 -C ~/otp/
+  - mkdir -p ~/.kerl
+  - source $HOME/otp/17.5/activate
+  - >
+    if [ ! -f $HOME/.cache/rebar3-bin/rebar3 ]; then
+      mkdir -p $HOME/.cache/rebar3-bin/
+      git clone https://github.com/erlang/rebar3 _build/rebar3
+      (cd _build/rebar3 && ./bootstrap)
+      cp _build/rebar3/rebar3 $HOME/.cache/rebar3-bin/rebar3
+    fi
+  - export PATH=$PATH:$HOME/.cache/rebar3-bin/
+  - pip install --user codecov
+  - export PATH=$PATH:$HOME/.local/bin
+
 before_script:
-- (test "$TRAVIS_TAG" && git checkout "$TRAVIS_TAG") || (test "$TRAVIS_BRANCH" && git checkout "$TRAVIS_BRANCH")
-script: rebar3 eunit
+  - git checkout -B "${TRAVIS_TAG:-${TRAVIS_BRANCH}}"
+
+script:
+  - |
+    # fetch all deps using rabbit build system, inject them into tests via ERL_LIBS
+    make current_rmq_ref=stable base_rmq_ref=stable RABBITMQ_CURRENT_FETCH_URL=https://github.com/rabbitmq/rabbitmq-trick-erlang.mk-into-using-proper-url-for-deps
+    export ERL_LIBS=./deps
+    rebar3 eunit
+
 after_success:
-- covertool -cover _build/test/cover/eunit.coverdata -appname rabbitmq-autocluster -output cobertura.xml
-- codecov
+  - rebar3 covertool generate
+  - codecov -f _build/test/covertool/autocluster.covertool.xml -X search
+
 before_deploy:
 - make clean
 - make dist
