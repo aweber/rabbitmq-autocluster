@@ -283,18 +283,30 @@ join_cluster_nodes(Nodes) ->
 process_join_result({ok, already_member}) ->
   %% Before https://github.com/rabbitmq/rabbitmq-server/pull/868 it
   %% should be considered an error, but I'm not sure.
-  mnesia:start(),
-  rabbit:start(),
   autocluster_log:debug("Was already joined."),
-  ok;
+  maybe_start(ok);
 process_join_result(ok) ->
-  mnesia:start(),
-  rabbit:start(),
   autocluster_log:debug("Cluster joined."),
-  ok;
+  maybe_start(ok);
 process_join_result({error, Reason}) ->
   autocluster_log:warning("Failed to join to cluster: ~p", [Reason]),
-  startup_failure().
+  maybe_start(startup_failure()).
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Step 15: Start rabbit back after join - but only if join result and
+%% failure mode allows us to do it.
+%% @end
+%%--------------------------------------------------------------------
+-spec maybe_start(ok | error) -> ok | error.
+maybe_start(ok) ->
+  mnesia:start(),
+  rabbit:start(),
+  ok;
+maybe_start(error) ->
+  autocluster_log:warning("Failure mode forbids startup", []),
+  error.
 
 %%--------------------------------------------------------------------
 %% @private

@@ -1,7 +1,7 @@
 -module(autocluster_testing).
 
 %% API
--export([on_start/0, on_finish/1, reset/0]).
+-export([on_start/0, on_finish/1, reset/0, with_mock/2, with_mock_each/2]).
 
 -include("autocluster.hrl").
 
@@ -28,3 +28,26 @@ reset([H|T]) ->
   os:unsetenv(H#config.os),
   maybe_reset_truncated_envvar(H#config.os, string:left(H#config.os, 9)),
   reset(T).
+
+with_mock(ModulesToMock, InitiatorOrTests) ->
+  with_mock_generator(setup, ModulesToMock, InitiatorOrTests).
+
+with_mock_each(ModulesToMock, InitiatorOrTests) ->
+  with_mock_generator(foreach, ModulesToMock, InitiatorOrTests).
+
+with_mock_generator(FixtureType, ModulesToMock, InitiatorOrTests) ->
+  {
+    FixtureType,
+    fun() ->
+        autocluster_testing:reset(),
+        lists:foreach(fun ({Mod, Opts}) when is_list(Opts) -> meck:new(Mod, Opts);
+                          ({Mod, Opt}) when is_atom(Opt) -> meck:new(Mod, [Opt]);
+                          (Mod) -> meck:new(Mod, [])
+                      end, ModulesToMock),
+        lists:map(fun ({Mod, _}) -> Mod;
+                      (Mod) -> Mod
+                  end, ModulesToMock)
+    end,
+    fun on_finish/1,
+    InitiatorOrTests
+  }.
