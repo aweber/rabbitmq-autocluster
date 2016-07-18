@@ -4,7 +4,7 @@ A RabbitMQ plugin that clusters nodes automatically using `Consul <https://consu
 `etcd2 <https://github.com/coreos/etcd>`_, DNS, `AWS EC2 tags <http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html>`_
 or `AWS Autoscaling Groups <https://aws.amazon.com/autoscaling/>`_ for service discovery.
 
-**Note** This plugin is not a replacement for first-hand knowledge of how to manually create a RabbitMQ cluster. If you run into issues using the plugin, you should try and manually create the cluster in the same environment as you are trying to use the plugin in. For information on how to cluster RabbitMQ manually, please see the `RabbitMQ documentation <https://www.rabbitmq.com/clustering.html>`_.
+**Note:** This plugin is not a replacement for first-hand knowledge of how to manually create a RabbitMQ cluster. If you run into issues using the plugin, you should try and manually create the cluster in the same environment as you are trying to use the plugin in. For information on how to cluster RabbitMQ manually, please see the `RabbitMQ documentation <https://www.rabbitmq.com/clustering.html>`_.
 
 .. image:: https://img.shields.io/travis/aweber/rabbitmq-autocluster.svg
     :target: https://travis-ci.org/aweber/rabbitmq-autocluster
