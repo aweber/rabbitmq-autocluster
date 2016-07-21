@@ -20,9 +20,6 @@
 
 -define(INSTANCE_ID_URL,
         "http://169.254.169.254/latest/meta-data/instance-id").
--define(AUTOSCALING_DESCRIBE_INSTANCES,
-        "/?Action=DescribeAutoScalingInstances&Version=2011-01-01").
-
 
 -spec nodelist() -> {ok, Nodes :: list()}|{error, Reason :: string()}.
 %% @doc Return the nodelist from the AWS API
@@ -104,16 +101,49 @@ flatten_autoscaling_datastructure(Value) ->
   Instances = proplists:get_value("AutoScalingInstances", Result),
   [Instance || {_, Instance} <- Instances].
 
+get_next_token(Value) ->
+  Response = proplists:get_value("DescribeAutoScalingInstancesResponse", Value),
+  Result = proplists:get_value("DescribeAutoScalingInstancesResult", Response),
+  NextToken = proplists:get_value("NextToken", Result),
+  NextToken.
+
+get_all_autoscaling_instances(Accum) ->
+  QArgs = [{"Action", "DescribeAutoScalingInstances"}, {"Version", "2011-01-01"}],
+  fetch_all_autoscaling_instances(QArgs, Accum).
+
+get_all_autoscaling_instances(Accum, 'undefined') -> {ok, Accum};
+get_all_autoscaling_instances(Accum, NextToken) ->
+  QArgs = [{"Action", "DescribeAutoScalingInstances"}, {"Version", "2011-01-01"}, {"NextToken", NextToken}],
+  fetch_all_autoscaling_instances(QArgs, Accum).
+
+fetch_all_autoscaling_instances(QArgs, Accum) ->
+  Path = "/?" ++ rabbitmq_aws_urilib:build_query_string(QArgs),
+
+  case api_get_request("autoscaling", Path) of
+    {ok, Payload} ->
+      Instances = flatten_autoscaling_datastructure(Payload),
+      NextToken = get_next_token(Payload),
+      case get_all_autoscaling_instances(lists:append(Instances, Accum), NextToken) of
+        {ok, InnerInstances} ->
+          {ok, InnerInstances};
+        error -> error
+      end;
+    {error, Reason} ->
+      autocluster_log:error("Error fetching autoscaling group instance list: ~p", [Reason]),
+      error
+  end.
 
 get_autoscaling_group_node_list(error, _) -> {error, instance_discovery};
 get_autoscaling_group_node_list(Instance, Tag) ->
-  case api_get_request("autoscaling", ?AUTOSCALING_DESCRIBE_INSTANCES) of
-    {ok, Payload} ->
-      Instances = flatten_autoscaling_datastructure(Payload),
+  case get_all_autoscaling_instances([]) of
+    {ok, Instances} ->
       case find_autoscaling_group(Instances, Instance) of
         {ok, Group} ->
+          autocluster_log:debug("Fetching autoscaling = Group: ~p", [Group]),
           Values = get_autoscaling_instances(Instances, Group, []),
+          autocluster_log:debug("Fetching autoscaling = Instances: ~p", [Values]),
           Names = get_priv_dns_by_instance_ids(Values, Tag),
+          autocluster_log:debug("Fetching autoscaling = DNS: ~p", [Names]),
           {ok, [autocluster_util:node_name(N) || N <- Names]};
         error -> error
       end;
@@ -193,7 +223,6 @@ instance_id() ->
     {ok, {{_, 200, _}, _, Value}} -> Value;
     _ -> error
   end.
-
 
 maybe_add_tag_filters([], QArgs) -> QArgs;
 maybe_add_tag_filters([{Key, Value}|T], QArgs) ->
