@@ -87,21 +87,23 @@ unregister() ->
   end.
 
 
-%% @spec set_etcd_node_key() -> ok|{error, Reason :: string()}
+%% @spec set_etcd_node_key() -> ok.
 %% @doc Update etcd, setting a key for this node with a TTL of etcd_node_ttl
 %% @end
 %%
 set_etcd_node_key() ->
-  autocluster_log:debug("Updated node registration with etcd"),
   Interval = autocluster_config:get(etcd_node_ttl),
   case autocluster_httpc:put(autocluster_config:get(etcd_scheme),
                              autocluster_config:get(etcd_host),
                              autocluster_config:get(etcd_port),
                              node_path(), [{ttl, Interval}],
                              "value=enabled") of
-    {ok, _} -> ok;
-    Error   -> Error
-  end.
+    {ok, _} ->
+       autocluster_log:debug("Updated node registration with etcd");
+    {error, Error}   ->
+       autocluster_log:debug("Failed to update node registration with etcd - ~s", [Error])
+  end,
+  ok.
 
 
 %% @spec base_path() -> list()

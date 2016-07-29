@@ -62,7 +62,7 @@ init() ->
 %% Return a list of healthy nodes registered in Consul
 %% @end
 %%--------------------------------------------------------------------
--spec nodelist() -> {ok, list()}|{error, Reason :: atom() | string()}.
+-spec nodelist() -> {ok, list()}|{error, Reason :: string()}.
 nodelist() ->
   case autocluster_httpc:get(autocluster_config:get(consul_scheme),
                              autocluster_config:get(consul_host),
@@ -81,7 +81,7 @@ nodelist() ->
 %% Register with Consul as providing rabbitmq service
 %% @end
 %%--------------------------------------------------------------------
--spec register() -> ok | {error, Reason :: atom() | string()}.
+-spec register() -> ok | {error, Reason :: string()}.
 register() ->
   case registration_body() of
     {ok, Body} ->
@@ -123,7 +123,7 @@ send_health_check_pass() ->
 %% Unregister the rabbitmq service for this node from Consul.
 %% @end
 %%--------------------------------------------------------------------
--spec unregister() -> ok | {error, Reason :: atom() | string()}.
+-spec unregister() -> ok | {error, Reason :: string()}.
 unregister() ->
   Service = string:join(["service", service_id()], ":"),
   case autocluster_httpc:get(autocluster_config:get(consul_scheme),
@@ -375,7 +375,7 @@ registration_body_maybe_add_tag(Payload) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec registration_body_maybe_add_tag(Payload :: list(),
-                                      ClusterName :: string)
+                                      ClusterName :: string())
     -> list().
 registration_body_maybe_add_tag(Payload, "undefined") -> Payload;
 registration_body_maybe_add_tag(Payload, Cluster) ->
@@ -407,8 +407,8 @@ service_address() ->
 %% @end
 %%--------------------------------------------------------------------
 -spec service_address(Static :: string(),
-                      Auto :: true | false,
-                      AutoNIC :: true | false) -> string().
+                      Auto :: boolean(),
+                      AutoNIC :: string()) -> string().
 service_address(_, true, "undefined") ->
   autocluster_util:node_hostname();
 service_address(Value, false, "undefined") ->

@@ -182,7 +182,7 @@ apply_interval(Seconds) ->
 %% @spec maybe_cleanup(State :: #state{}) -> NewState :: #state{}
 %% @end
 %%--------------------------------------------------------------------
--spec maybe_cleanup(State :: #state{}) -> NewState :: #state{}.
+-spec maybe_cleanup(State :: #state{}) -> ok.
 maybe_cleanup(State) ->
   maybe_cleanup(State, unreachable_nodes()).
 

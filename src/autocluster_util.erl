@@ -182,7 +182,7 @@ node_name(Value) ->
 %% most part of the name, delimited by periods.
 %% @end
 %%--------------------------------------------------------------------
--spec node_name_parse(Value :: string()) -> atom().
+-spec node_name_parse(Value :: string()) -> string().
 node_name_parse(Value) ->
   case inet:parse_ipv4strict_address(Value) of
     {ok, _} ->
@@ -199,7 +199,7 @@ node_name_parse(Value) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec node_name_parse(IsIPv4 :: true | false, Value :: string())
-    -> atom().
+    -> string().
 node_name_parse(true, Value) -> Value;
 node_name_parse(false, Value) ->
   Parts = string:tokens(Value, "."),
@@ -215,8 +215,8 @@ node_name_parse(false, Value) ->
 %%--------------------------------------------------------------------
 -spec node_name_parse(Segments :: integer(),
                       Value :: string(),
-                      Parts :: list())
-    -> atom().
+                      Parts :: [string()])
+    -> string().
 node_name_parse(1, Value, _) -> Value;
 node_name_parse(_, _, Parts) ->
   as_string(lists:nth(1, Parts)).
