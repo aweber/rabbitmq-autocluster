@@ -1,5 +1,7 @@
-# Anything except erlang - to prevent travis from calling rebar2 automatically
-language: ruby
+language: erlang
+
+otp_release:
+  - 17.5
 
 addons:
   apt:
@@ -10,22 +12,9 @@ addons:
 cache:
   apt: true
   directories:
-    - $HOME/.cache/rebar3
-    - $HOME/.cache/rebar3-bin
+    - $HOME/.cache/plt
 
 install:
-  - wget https://s3.amazonaws.com/travis-otp-releases/binaries/$(lsb_release -is | tr "A-Z" "a-z")/$(lsb_release -rs)/$(uname -m)/erlang-17.5-nonroot.tar.bz2
-  - mkdir -p ~/otp && tar -xf erlang-17.5-nonroot.tar.bz2 -C ~/otp/
-  - mkdir -p ~/.kerl
-  - source $HOME/otp/17.5/activate
-  - >
-    if [ ! -f $HOME/.cache/rebar3-bin/rebar3 ]; then
-      mkdir -p $HOME/.cache/rebar3-bin/
-      git clone https://github.com/erlang/rebar3 _build/rebar3
-      (cd _build/rebar3 && ./bootstrap)
-      cp _build/rebar3/rebar3 $HOME/.cache/rebar3-bin/rebar3
-    fi
-  - export PATH=$PATH:$HOME/.cache/rebar3-bin/
   - pip install --user codecov
   - export PATH=$PATH:$HOME/.local/bin
 
@@ -33,21 +22,31 @@ before_script:
   - git checkout -B "${TRAVIS_TAG:-${TRAVIS_BRANCH}}"
 
 script:
+  - make RABBITMQ_CURRENT_FETCH_URL=https://github.com/rabbitmq/rabbitmq-trick-erlang.mk-into-using-proper-url-for-deps
+  - make ct COVER=true
   - |
-    # fetch all deps using rabbit build system, inject them into tests via ERL_LIBS
-    make current_rmq_ref=stable base_rmq_ref=stable RABBITMQ_CURRENT_FETCH_URL=https://github.com/rabbitmq/rabbitmq-trick-erlang.mk-into-using-proper-url-for-deps
-    export ERL_LIBS=./deps
-    rebar3 eunit
+    # We want this after ct run, so `rabbit` dependency will be fetched.
+    # Then we can add rabbit/rabbit_common to plt, thus getting 0
+    # warnings after running dialyzer itself
+    if [ -r $HOME/.cache/plt/.autocluster.plt ]; then
+      cp -va $HOME/.cache/plt/.autocluster.plt $(pwd)/.
+    else
+      make plt || true # making plt produces some warnings which we don't care about
+      mkdir -p $HOME/.cache/plt/
+      cp -va .autocluster.plt $HOME/.cache/plt/
+    fi
+  - make dialyze
 
 after_success:
-  - rebar3 covertool generate
-  - codecov -f _build/test/covertool/autocluster.covertool.xml -X search
+  - ./bin/covertool -cover ct.coverdata -appname autocluster
+  - codecov -f coverage.xml -X search
 
 before_deploy:
-- make clean
-- make dist
-- tar cvfz autocluster-${TRAVIS_TAG}.tgz plugins/autocluster-${TRAVIS_TAG}.ez plugins/rabbitmq_aws-*.ez
-- echo "TRAVIS_OTP_RELEASE = ${TRAVIS_OTP_RELEASE}"
+  - make clean
+  - make dist
+  - tar cvfz autocluster-${TRAVIS_TAG}.tgz plugins/autocluster-${TRAVIS_TAG}.ez plugins/rabbitmq_aws-*.ez
+  - echo "TRAVIS_OTP_RELEASE = ${TRAVIS_OTP_RELEASE}"
+
 deploy:
   provider: releases
   api_key:

@@ -11,7 +11,7 @@ process_join_result_test_() ->
     fun() ->
         meck:expect(rabbit_log, log, fun(_, _, _, _) -> ok end),
         meck:expect(application, stop, fun(_) -> ok end),
-        meck:expect(mnesia, stop, fun() -> ok end),
+        meck:expect(mnesia, stop, fun() -> stopped end),
         meck:expect(mnesia, start, fun() -> ok end),
         meck:expect(rabbit, start, fun() -> ok end),
         meck:expect(rabbit_mnesia, reset, fun() -> ok end)
