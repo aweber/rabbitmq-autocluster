@@ -29,12 +29,12 @@
 -spec init() -> ok | error.
 init() ->
   ensure_logging_configured(),
-  application:ensure_all_started(inets),
+  {ok, _} = application:ensure_all_started(inets),
   case node_is_registered() of
     error ->
       startup_failure();
     Registered ->
-      maybe_cluster_node(Registered)
+      cluster_node(Registered)
   end.
 
 %% Clustering Logic
@@ -105,7 +105,7 @@ ensure_registered(Name, Module) ->
 %% registered, passing the info off to step five if so.
 %% @end
 %%--------------------------------------------------------------------
--spec maybe_register({ok, [node()]} | {error, atom()},
+-spec maybe_register({ok, [node()]} | error,
   Name :: atom(),
   Module :: module()) -> ok | error.
 maybe_register({ok, Nodes}, Name, Module) ->
@@ -164,14 +164,10 @@ process_registration_result({error, Reason}, Name, _) ->
 %% registration check failed, return an error.
 %% @end
 %%--------------------------------------------------------------------
--spec maybe_cluster_node({ok, [node()] | error}) -> ok | error.
-maybe_cluster_node({ok, Nodes}) ->
+-spec cluster_node({ok, [node()]} | error) -> ok | error.
+cluster_node({ok, Nodes}) ->
   autocluster_log:debug("Discovered ~p", [Nodes]),
-  ensure_clustered(Nodes);
-maybe_cluster_node(error) ->
-  autocluster_log:error("Error in ensuring clustered."),
-  startup_failure().
-
+  ensure_clustered(Nodes).
 
 %%--------------------------------------------------------------------
 %% @private
@@ -184,7 +180,7 @@ maybe_cluster_node(error) ->
 -spec ensure_clustered([node()]) -> ok|error.
 ensure_clustered(Nodes) ->
   Others = sets:del_element(node(), sets:from_list(Nodes)),
-  maybe_join_cluster_nodes(rabbit_mnesia:cluster_nodes(all), Others).
+  maybe_join_cluster_nodes(rabbit_mnesia:cluster_nodes(all), Others, sets:size(Others)).
 
 
 %%--------------------------------------------------------------------
@@ -195,16 +191,15 @@ ensure_clustered(Nodes) ->
 %% the cluster.
 %% @end
 %%--------------------------------------------------------------------
--spec maybe_join_cluster_nodes(RNodes :: [node()], DNodes :: [node()])
+-spec maybe_join_cluster_nodes(RNodes :: [node()], DNodes :: sets:set(node()), DNodesCount :: non_neg_integer())
     -> ok | error.
-maybe_join_cluster_nodes(_, []) ->
+maybe_join_cluster_nodes(_, _, 0) ->
   autocluster_log:debug("Node appears to be the first in the cluster."),
   ok;
-maybe_join_cluster_nodes(Nodes, DNodes) when length(Nodes) == 1 ->
+maybe_join_cluster_nodes(Nodes, DNodes, _) when length(Nodes) == 1 ->
   maybe_join_discovery_nodes(sets:to_list(DNodes));
-maybe_join_cluster_nodes(Nodes, _) ->
+maybe_join_cluster_nodes(Nodes, _, _) ->
   maybe_join_existing_cluster(lists:member(node(), Nodes), Nodes).
-
 
 %%--------------------------------------------------------------------
 %% @private
@@ -265,8 +260,8 @@ join_cluster_nodes([]) ->
 
 join_cluster_nodes(Nodes) ->
   autocluster_log:debug("Joining the cluster."),
-  application:stop(rabbit),
-  mnesia:stop(),
+  ok = application:stop(rabbit),
+  stopped = mnesia:stop(),
   rabbit_mnesia:reset(),
   process_join_result(
     rabbit_mnesia:join_cluster(lists:nth(1, Nodes),
@@ -301,7 +296,7 @@ process_join_result({error, Reason}) ->
 %%--------------------------------------------------------------------
 -spec maybe_start(ok | error) -> ok | error.
 maybe_start(ok) ->
-  mnesia:start(),
+  ok = mnesia:start(),
   rabbit:start(),
   ok;
 maybe_start(error) ->
@@ -376,9 +371,7 @@ maybe_delay_startup() ->
 -spec startup_delay(integer()) -> ok.
 startup_delay(0) -> ok;
 startup_delay(Max) ->
-  <<A:32, B:32, C:32>> = crypto:rand_bytes(12),
-  random:seed({A,B,C}),
-  Duration = random:uniform(Max),
+  Duration = rabbit_misc:random(Max),
   autocluster_log:info("Delaying startup for ~pms.", [Duration]),
   timer:sleep(Duration).
 

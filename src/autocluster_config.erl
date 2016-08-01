@@ -83,7 +83,7 @@ maybe_get_value(Key, {value, Config}) ->
 %% environment variable without the prefix.
 %% @end
 %%--------------------------------------------------------------------
--spec process_getenv_value(Key :: string, Value :: string() | false)
+-spec process_getenv_value(Key :: string(), Value :: string() | false)
     -> string() | false.
 process_getenv_value(Key, false) ->
   maybe_getenv_with_subkey(Key, string:left(Key, 9));
@@ -112,7 +112,7 @@ maybe_getenv_with_subkey(_, _) ->
 %% Return the normalized value in as the proper data type
 %% @end
 %%--------------------------------------------------------------------
--spec normalize(Map :: [#config{}],
+-spec normalize(Map :: #config{},
                 Value :: atom() | boolean() | integer() | string()) ->
   atom() | integer() | string().
 normalize(Config, Value) when Config#config.is_port =:= true ->
