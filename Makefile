@@ -9,7 +9,7 @@ DEP_PLUGINS = rabbit_common/mk/rabbitmq-plugin.mk
 
 NO_AUTOPATCH += rabbitmq_aws
 
-dep_rabbitmq_aws = git https://github.com/gmr/rabbitmq-aws.git d4099f43fbc4d8f19b775ea796932dbd663ecf69
+dep_rabbitmq_aws = git https://github.com/gmr/rabbitmq-aws.git 0.1.3
 
 # FIXME: Use erlang.mk patched for RabbitMQ, while waiting for PRs to be
 # reviewed and merged.
