@@ -371,7 +371,7 @@ maybe_delay_startup() ->
 -spec startup_delay(integer()) -> ok.
 startup_delay(0) -> ok;
 startup_delay(Max) ->
-  Duration = rand_compat:uniform(Max),
+  Duration = rabbit_misc:random(Max),
   autocluster_log:info("Delaying startup for ~pms.", [Duration]),
   timer:sleep(Duration).
 
