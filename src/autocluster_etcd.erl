@@ -168,10 +168,9 @@ make_etcd_directory() ->
   end.
 
 
-%% @spec node_path() -> list()
 %% @doc Return a list of path segments that are the base path for etcd key actions
 %% @end
 %%
+-spec node_path() -> [autocluster_httpc:path_component()].
 node_path() ->
-  [_, Node] = string:tokens(atom_to_list(node()), "@"),
-  lists:append(base_path(), [Node]).
+  base_path() ++ [atom_to_list(node())].

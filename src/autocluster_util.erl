@@ -168,11 +168,19 @@ node_hostname() ->
 %% @end
 %%--------------------------------------------------------------------
 -spec node_name(Value :: atom() | binary() | string()) -> atom().
-node_name(Value) ->
-  list_to_atom(string:join([node_prefix(),
-                            node_name_parse(as_string(Value))],
-                           "@")).
-
+node_name(Value) when is_atom(Value) ->
+    node_name(atom_to_list(Value));
+node_name(Value) when is_binary(Value) ->
+    node_name(binary_to_list(Value));
+node_name(Value) when is_list(Value) ->
+  case lists:member($@, Value) of
+      true ->
+          list_to_atom(Value);
+      false ->
+          list_to_atom(string:join([node_prefix(),
+                                    node_name_parse(as_string(Value))],
+                                   "@"))
+  end.
 
 %%--------------------------------------------------------------------
 %% @doc

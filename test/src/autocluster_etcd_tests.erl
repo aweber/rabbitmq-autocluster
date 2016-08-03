@@ -27,8 +27,7 @@ get_node_from_key_leading_slash_test() ->
 
 node_path_test() ->
   autocluster_testing:reset(),
-  [_, Node] = string:tokens(atom_to_list(node()), "@"),
-  Expectation = [v2, keys, "rabbitmq", "default", Node],
+  Expectation = [v2, keys, "rabbitmq", "default", atom_to_list(node())],
   ?assertEqual(Expectation, autocluster_etcd:node_path()).
 
 nodelist_without_existing_directory_test_() ->

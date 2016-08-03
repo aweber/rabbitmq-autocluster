@@ -260,8 +260,8 @@ join_cluster_nodes([]) ->
 
 join_cluster_nodes(Nodes) ->
   autocluster_log:debug("Joining the cluster."),
-  ok = application:stop(rabbit),
-  stopped = mnesia:stop(),
+  _ = application:stop(rabbit),
+  _ = mnesia:stop(),
   rabbit_mnesia:reset(),
   process_join_result(
     rabbit_mnesia:join_cluster(lists:nth(1, Nodes),
