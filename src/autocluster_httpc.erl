@@ -23,12 +23,14 @@
 -define(CONTENT_JSON, "application/json").
 -define(CONTENT_URLENCODED, "application/x-www-form-urlencoded").
 
+-type path_component() :: atom() | binary() | integer() | string().
+-export_type([path_component/0]).
 
 %% @public
-%% @spec build_path(list()) -> string()
 %% @doc Build the path from a list of segments
 %% @end
 %%
+-spec build_path([path_component()]) -> string().
 build_path(Args) ->
   build_path(Args, []).
 

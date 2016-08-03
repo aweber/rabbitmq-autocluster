@@ -48,7 +48,7 @@ start_link() ->
 -spec init(Args :: term()) ->
     {ok, {{RestartStrategy :: supervisor:strategy(),
            MaxR            :: non_neg_integer(),
-           MaxT            :: non_neg_integer()},
+           MaxT            :: pos_integer()},
            [ChildSpec :: supervisor:child_spec()]}}.
 init([]) ->
   Children = case autocluster_config:get(cluster_cleanup) of
