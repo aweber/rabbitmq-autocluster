@@ -22,6 +22,6 @@ http_error_parsed_as_string_test_() ->
   autocluster_testing:with_mock(
     [httpc],
     [fun() ->
-         meck:expect(httpc, request, fun(_) -> {ok, 404, <<"some junk">>} end),
+         meck:expect(httpc, request, fun(_, _, _, _) -> {ok, 404, <<"some junk">>} end),
          ?assertEqual({error, "404"}, autocluster_httpc:get("http", "localhost", 80, "/", []))
      end]).

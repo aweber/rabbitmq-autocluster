@@ -11,6 +11,7 @@
          build_uri/5,
          delete/6,
          get/5,
+         get/7,
          post/6,
          put/6]).
 
@@ -109,9 +110,26 @@ build_query([], Parts) ->
 %% @end
 %%
 get(Scheme, Host, Port, Path, Args) ->
+    get(Scheme, Host, Port, Path, Args, [], []).
+
+
+%% @public
+%% @spec get(Scheme, Host, Port, Path, Args, Headers) -> Result
+%% @where Scheme  = string(),
+%%        Host    = string(),
+%%        Port    = integer(),
+%%        Path    = string(),
+%%        Args    = proplist(),
+%%        Headers = proplist(),
+%%        HttpOpts = proplist(),
+%%        Result  = {ok, mixed}|{error, Reason::string()}
+%% @doc Perform a HTTP GET request
+%% @end
+%%
+get(Scheme, Host, Port, Path, Args, Headers, HttpOpts) ->
   URL = build_uri(Scheme, Host, Port, Path, Args),
   autocluster_log:debug("GET ~s", [URL]),
-  Response = httpc:request(URL),
+  Response = httpc:request(get, {URL, Headers}, HttpOpts, []),
   autocluster_log:debug("Response: [~p]", [Response]),
   parse_response(Response).
 
