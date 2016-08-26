@@ -40,6 +40,18 @@
 
          {config, autocluster_host,      "AUTOCLUSTER_HOST",       "undefined",  string,  false}, %% DNS
 
+         {config, k8s_scheme,            "K8S_SCHEME",             "https",      string,  false}, %% kubernetes
+         {config, k8s_host,              "K8S_HOST",               "kubernetes.default.svc.cluster.local",
+                                                                                 string,  false},
+         {config, k8s_port,              "K8S_PORT",               443,          integer, true},
+         {config, k8s_token_path,        "K8S_TOKEN_PATH",         "/var/run/secrets/kubernetes.io/serviceaccount/token",
+                                                                                 string,  false},
+         {config, k8s_cert_path,         "K8S_CERT_PATH",          "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+                                                                                 string,  false},
+         {config, k8s_namespace_path,    "K8S_NAMESPACE_PATH",     "/var/run/secrets/kubernetes.io/serviceaccount/namespace",
+                                                                                 string,  false},
+         {config, k8s_service_name,      "K8S_SERVICE_NAME",       "rabbitmq",   string,  false},
+
          {config, etcd_scheme,           "ETCD_SCHEME",            "http",       string,  false}, %% etcd
          {config, etcd_host,             "ETCD_HOST",              "localhost",  string,  false},
          {config, etcd_port,             "ETCD_PORT",              2379,         integer, true},

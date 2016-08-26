@@ -73,6 +73,10 @@ ensure_registered(etcd) ->
   autocluster_log:debug("Using etcd backend"),
   ensure_registered(etcd, autocluster_etcd);
 
+ensure_registered(k8s) ->
+  autocluster_log:debug("Using k8s backend"),
+  ensure_registered(k8s, autocluster_k8s);
+
 ensure_registered(unconfigured) ->
   autocluster_log:error("Backend is not configured"),
   error;

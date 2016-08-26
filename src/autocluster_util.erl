@@ -106,6 +106,7 @@ backend_module(aws)          -> autocluster_aws;
 backend_module(consul)       -> autocluster_consul;
 backend_module(dns)          -> autocluster_dns;
 backend_module(etcd)         -> autocluster_etcd;
+backend_module(k8s)          -> autocluster_k8s;
 backend_module(_)            -> undefined.
 
 
