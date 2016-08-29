@@ -231,10 +231,8 @@ instance_id() ->
 -spec maybe_add_tag_filters(tags(), filters(), integer()) -> filters().
 maybe_add_tag_filters([], QArgs, _) -> QArgs;
 maybe_add_tag_filters([{Key, Value}|T], QArgs, Num) ->
-  maybe_add_tag_filters(T, lists:append([{"Filter." ++ integer_to_list(Num) ++ ".Name", "tag-key"},
-                                         {"Filter." ++ integer_to_list(Num) ++ ".Value.1", Key},
-                                         {"Filter." ++ integer_to_list(Num+1) ++ ".Name", "tag-value"},
-                                         {"Filter." ++ integer_to_list(Num+1) ++ ".Value.1", Value}], QArgs), Num+2).
+  maybe_add_tag_filters(T, lists:append([{"Filter." ++ integer_to_list(Num) ++ ".Name", "tag:" ++ Key},
+                                         {"Filter." ++ integer_to_list(Num) ++ ".Value.1", Value}], QArgs), Num+1).
 
 
 -spec maybe_set_credentials(AccessKey :: string(),
