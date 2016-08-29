@@ -194,8 +194,10 @@ get_priv_dns_name_from_reservation_set([{"item", RI}|T], Accum) ->
   InstancesSet = proplists:get_value("instancesSet", RI),
   Item = proplists:get_value("item", InstancesSet),
   DNSName = proplists:get_value("privateDnsName", Item),
-  get_priv_dns_name_from_reservation_set(T, lists:append([DNSName], Accum)).
-
+  if
+    DNSName == [] -> get_priv_dns_name_from_reservation_set(T, Accum);
+    true -> get_priv_dns_name_from_reservation_set(T, lists:append([DNSName], Accum))
+  end.
 
 get_priv_dns_names(Path) ->
   case api_get_request("ec2", Path) of
