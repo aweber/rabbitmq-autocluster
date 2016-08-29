@@ -35,7 +35,7 @@ nodelist() ->
                              autocluster_config:get(aws_secret_key)),
   case autocluster_config:get(aws_autoscaling) of
     true ->
-      get_autoscaling_group_node_list(instance_id(), []);
+      get_autoscaling_group_node_list(instance_id(), get_tags());
     false ->
       get_node_list_from_tags(get_tags())
   end.
