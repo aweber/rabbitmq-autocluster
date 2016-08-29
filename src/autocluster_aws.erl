@@ -213,6 +213,7 @@ get_tags() ->
   Tags = autocluster_config:get(aws_ec2_tags),
   if
     Tags == "undefined" -> [];
+    Tags == "unused" -> [{"ignore", "me"}]; %% this is to trick dialyzer
     true -> Tags
   end.
 
