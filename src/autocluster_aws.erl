@@ -37,7 +37,7 @@ nodelist() ->
     true ->
       get_autoscaling_group_node_list(instance_id(), []);
     false ->
-      get_node_list_from_tags(get_tags(autocluster_config:get(aws_ec2_tags)))
+      get_node_list_from_tags(get_tags())
   end.
 
 
@@ -208,9 +208,13 @@ get_priv_dns_names(Path) ->
       error
   end.
 
--spec get_tags(Tags :: tags()) -> tags().
-get_tags("undefined") -> [];
-get_tags(Value) -> Value.
+-spec get_tags() -> tags().
+get_tags() ->
+  Tags = autocluster_config:get(aws_ec2_tags),
+  if
+    Tags == "undefined" -> [];
+    true -> Tags
+  end.
 
 -spec instance_id() -> string() | error.
 %% @private
