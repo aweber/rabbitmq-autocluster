@@ -12,7 +12,7 @@
         ,autocluster_k8s_tests/1
         ,autocluster_sup_tests/1
         ,autocluster_util_tests/1
-        ,autocluster_boot_tests/1
+        ,autocluster_tests/1
         ]).
 
 
@@ -25,7 +25,7 @@ all() ->
     ,autocluster_k8s_tests
     ,autocluster_sup_tests
     ,autocluster_util_tests
-    ,autocluster_boot_tests
+    ,autocluster_tests
     ].
 
 autocluster_config_tests(_Config) ->
@@ -52,5 +52,5 @@ autocluster_sup_tests(_Config) ->
 autocluster_util_tests(_Config) ->
     ok = eunit:test(autocluster_util_tests, [verbose]).
 
-autocluster_boot_tests(_Config) ->
-    ok = eunit:test(autocluster_boot_tests, [verbose]).
+autocluster_tests(_Config) ->
+    ok = eunit:test(autocluster_tests, [verbose]).

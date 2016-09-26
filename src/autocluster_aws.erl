@@ -8,6 +8,8 @@
 -behavior(autocluster_backend).
 
 -export([nodelist/0,
+         lock/1,
+         unlock/1,
          register/0,
          unregister/0]).
 
@@ -24,7 +26,7 @@
 -type tags() :: [{string(), string()}].
 -type filters() :: [{string(), string()}].
 
--spec nodelist() -> {ok, Nodes :: list()}|{error, Reason :: string()}.
+-spec nodelist() -> {ok, [node()]}|{error, Reason :: string()}.
 %% @doc Return the nodelist from the AWS API
 %% @end
 %%
@@ -40,6 +42,13 @@ nodelist() ->
       get_node_list_from_tags(get_tags())
   end.
 
+-spec lock(term()) -> not_supported.
+lock(_) ->
+    not_supported.
+
+-spec unlock(term()) -> ok | {error, string()}.
+unlock(_) ->
+    ok.
 
 -spec register() -> ok | {error, string()}.
 %% @doc This is not required for the AWS backend.
