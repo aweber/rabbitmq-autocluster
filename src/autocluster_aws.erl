@@ -177,14 +177,14 @@ get_priv_dns_by_instance_ids(Instances, Tag) ->
   QArgs = build_instance_list_qargs(Instances,
                                     [{"Action", "DescribeInstances"},
                                      {"Version", "2015-10-01"}]),
-  QArgs2 = lists:keysort(1, maybe_add_tag_filters(Tag, QArgs)),
+  QArgs2 = lists:keysort(1, maybe_add_tag_filters(Tag, QArgs, 1)),
   Path = "/?" ++ rabbitmq_aws_urilib:build_query_string(QArgs2),
   get_priv_dns_names(Path).
 
 
 get_priv_dns_by_tags(Tags) ->
   QArgs = [{"Action", "DescribeInstances"}, {"Version", "2015-10-01"}],
-  QArgs2 = lists:keysort(1, maybe_add_tag_filters(Tags, QArgs)),
+  QArgs2 = lists:keysort(1, maybe_add_tag_filters(Tags, QArgs, 1)),
   Path = "/?" ++ rabbitmq_aws_urilib:build_query_string(QArgs2),
   get_priv_dns_names(Path).
 
@@ -194,8 +194,10 @@ get_priv_dns_name_from_reservation_set([{"item", RI}|T], Accum) ->
   InstancesSet = proplists:get_value("instancesSet", RI),
   Item = proplists:get_value("item", InstancesSet),
   DNSName = proplists:get_value("privateDnsName", Item),
-  get_priv_dns_name_from_reservation_set(T, lists:append([DNSName], Accum)).
-
+  if
+    DNSName == [] -> get_priv_dns_name_from_reservation_set(T, Accum);
+    true -> get_priv_dns_name_from_reservation_set(T, lists:append([DNSName], Accum))
+  end.
 
 get_priv_dns_names(Path) ->
   case api_get_request("ec2", Path) of
@@ -210,13 +212,11 @@ get_priv_dns_names(Path) ->
 
 -spec get_tags() -> tags().
 get_tags() ->
-  %% XXX First clause always matches and returns empty list. I decided
-  %% to trick dialyzer that way, when it was complaining about
-  %% get_priv_dns_by_tags/1 being not used - as I don't know what are
-  %% the future plans for aws backend.
-  case 1 + 1 of
-    Int when abs(Int) > 0 -> [];
-    _  -> [{"t", "t"}]
+  Tags = autocluster_config:get(aws_ec2_tags),
+  if
+    Tags == "undefined" -> [];
+    Tags == "unused" -> [{"ignore", "me"}]; %% this is to trick dialyzer
+    true -> Tags
   end.
 
 -spec instance_id() -> string() | error.
@@ -230,11 +230,11 @@ instance_id() ->
     _ -> error
   end.
 
--spec maybe_add_tag_filters(tags(), filters()) -> filters().
-maybe_add_tag_filters([], QArgs) -> QArgs;
-maybe_add_tag_filters([{Key, Value}|T], QArgs) ->
-  maybe_add_tag_filters(T, lists:append([{"Filter.1.Name", "tag:" ++ Key},
-                                         {"Filter.1.Value.1", Value}], QArgs)).
+-spec maybe_add_tag_filters(tags(), filters(), integer()) -> filters().
+maybe_add_tag_filters([], QArgs, _) -> QArgs;
+maybe_add_tag_filters([{Key, Value}|T], QArgs, Num) ->
+  maybe_add_tag_filters(T, lists:append([{"Filter." ++ integer_to_list(Num) ++ ".Name", "tag:" ++ Key},
+                                         {"Filter." ++ integer_to_list(Num) ++ ".Value.1", Value}], QArgs), Num+1).
 
 
 -spec maybe_set_credentials(AccessKey :: string(),
