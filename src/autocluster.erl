@@ -59,7 +59,7 @@ node_is_registered() ->
 -spec ensure_registered(atom()) -> ok | error.
 ensure_registered(aws) ->
   autocluster_log:debug("Using AWS backend"),
-  ensure_registered(aws, autocluster_aws);
+  ensure_registered(aws, autocluster_aws, [rabbitmq_aws]);
 
 ensure_registered(consul) ->
   autocluster_log:debug("Using consul backend"),
@@ -96,6 +96,12 @@ ensure_registered(Backend) ->
 -spec ensure_registered(Name :: atom(), Module :: module())
     -> ok | error.
 ensure_registered(Name, Module) ->
+  ensure_registered(Name, Module, []).
+
+-spec ensure_registered(Name :: atom(), Module :: atom(), Apps :: [atom()])
+    -> ok | error.
+ensure_registered(Name, Module, Apps) ->
+  _ = [ application:ensure_all_started(App) || App <- Apps ],
   maybe_delay_startup(),
   autocluster_log:info("Starting ~p registration.", [Name]),
   Nodes = Module:nodelist(),

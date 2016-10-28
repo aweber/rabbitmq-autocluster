@@ -1,0 +1,7 @@
+{application,autocluster_aws,
+             [{description,"Autocluster AWS bundle"},
+              {vsn,"0.0.1"},
+              {modules,[]},
+              {registered,[]},
+              {env,[]},
+              {applications,[rabbitmq_aws,autocluster]}]}.
