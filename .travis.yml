@@ -1,5 +1,16 @@
-language: erlang
+env:
+  global:
+    - secure: "GutP9NXV03rcnAcUWLaJfUoY3zJ56VvPR+WqJy7rLMjos3kTq0MFkGRStfCkYg+m3gfdYWB4nFBFc/VzYEFebFWXNukp1TSarPxQ/EuGrJB9PT4wP+k3nQ3gdBlaIXQAMp/RjkJNNkI62rKB59YJsV3/Vt3sMpEFKdxf3vtl/TTly7efkSEQcupwxSz0lNWsDWi7VNRcAH+JUsxiKX+j6o+5403p5cPRi2nBLXK+gQ5eTSSv4bYwvy83WJCORa7ZvPUoipo9Xznzb2j9BYLLjk1zvg/+W1NwjLmpXMIQS0jrvev2IExKkQvuGsSaFGFhD+2hEWQW+ZgNWfotc8Y1VzS+odkyjAs+4FIX/kYA9eeNnVJs5fy9gi10mCvhVhs1fEwhiU4Qy3Q2Ohm4Hsfl/Y4Tm4jUWKwlX0prxb75tj8lHW8eMzIeN6fFozsaHI0ol8B44ZXVHMbzHJVTXKnpz/G0BMq6Jqr2klST4VZFSXiuGy1eZKaLFARGJEEI7JRLfKaxP0zHtwW3YWFfzqcXl2eM1eBKLxueQ7QJStO7xpvw6zENx/JVzol5is97KP6Q9GXY9zsrFHisxWm8wKGnzHfOIxOz++RhbxVHxWCbXC2FkAhRo/c+5ocX84djGh2i7uDMSb3hbMJ7Ua2SBDPEaBHre6RPJBqldZ+OJBJ3d78="
+    - SIGNING_KEY: C6A5421A
 
+# Creating GPG keys for travis use-case is thoroughly described at
+# http://www.debonair.io/post/maven-cd/#create-code-signing-cert:a547b4a31e9ae1ba41fe3873843c9208
+# After GPG key was produced using that procedure and stored to packaging/codesigning.asc, we need:
+# 1. Do `travis encrypt-file packaging/codesigning.asc` and update `openssl` call below with its output
+# 2. Do `travis encrypt GPG_PASSPHRASE=<passphrase for the key from above>` and update `secure` key above
+# 3. Set `SIGNING_KEY` above to the id of that key
+
+language: erlang
 otp_release:
   - 17.5
 
@@ -8,6 +19,13 @@ addons:
     packages:
     - curl
     - xsltproc
+    - erlang-dev
+    - erlang-nox
+    - rsync
+    - build-essential
+    - python
+    - zip
+    - dpkg-dev
 
 cache:
   apt: true
@@ -61,15 +79,26 @@ after_success:
 
 before_deploy:
   - make clean
-  - make dist
-  - tar cvfz autocluster-${TRAVIS_TAG}.tgz plugins/autocluster*.ez plugins/rabbitmq_aws-*.ez
   - echo "TRAVIS_OTP_RELEASE = ${TRAVIS_OTP_RELEASE}"
+  - |
+    if [ ! -z "$GPG_PASSPHRASE" ]; then
+      openssl aes-256-cbc -K $encrypted_35194d4e38c7_key -iv $encrypted_35194d4e38c7_iv -in packaging/codesigning.asc.enc -out packaging/codesigning.asc -d
+      gpg --fast-import packaging/codesigning.asc
+    fi
+  - make packages VERSION=${TRAVIS_TAG} SIGN_KEY=$SIGNING_KEY
 
 deploy:
   provider: releases
   api_key:
     secure: ktklMK+XMOteFt+m9NHhVqKkA1Wo8f9L/cJphUmBMgb3TS+4+vAU50yY8omIyprS8poc3mBWxjYD9p9xdeDnXY2tiFrLDKCWU/jbH3awD0uL6W0Di8BYAVOGhr2Jjjp6gi/B67wHtCtzEoSSNNfMMZ+RWf4GZjJ96NXOLhPRx4k=
-  file: autocluster-${TRAVIS_TAG}.tgz
+  file_glob: true
+  file:
+    - PACKAGES/autocluster-${TRAVIS_TAG}.tgz
+    - PACKAGES/deb/rabbitmq-autocluster_${TRAVIS_TAG}-*.dsc
+    - PACKAGES/deb/rabbitmq-autocluster_${TRAVIS_TAG}-*.deb
+    - PACKAGES/deb/rabbitmq-autocluster_${TRAVIS_TAG}-*.changes
+    - PACKAGES/deb/rabbitmq-autocluster_${TRAVIS_TAG}-*.debian.tar.gz
+    - PACKAGES/deb/rabbitmq-autocluster_${TRAVIS_TAG}.orig.tar.xz
   skip_cleanup: true
   on:
     condition: "$TRAVIS_OTP_RELEASE = 17.5"

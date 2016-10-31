@@ -1,0 +1,5 @@
+rabbitmq-autocluster for Debian
+-------------------------------
+
+This package install plugins .ez-files to /usr/lib/rabbitmq/plugins. This path is supported only beginning with
+RabbitMQ version 3.6.6.
