@@ -37,7 +37,7 @@
 
 %% Boot sequence steps - exported for better diagnostics, so we can
 %% get current step name using erlang:fun_info/2
--export([validate_backend_options/1,
+-export([initialize_backend/1,
          acquire_startup_lock/1,
          find_best_node_to_join/1,
          maybe_cluster/1,
@@ -64,7 +64,7 @@ boot_step_discover_and_join() ->
     ensure_logging_configured(),
     autocluster_log:info("Running discover/join stage"),
     start_dependee_applications(),
-    Steps = [fun autocluster:validate_backend_options/1,
+    Steps = [fun autocluster:initialize_backend/1,
              fun autocluster:acquire_startup_lock/1,
              fun autocluster:find_best_node_to_join/1,
              fun autocluster:maybe_cluster/1],
@@ -177,14 +177,18 @@ get_run_steps_state() ->
 %% about it to next steps.
 %% @end
 %%--------------------------------------------------------------------
--spec validate_backend_options(#startup_state{}) -> {ok, #startup_state{}} | {error, iolist()}.
-validate_backend_options(State) ->
-    case detect_backend(autocluster_config:get(backend)) of
-        {ok, Name, Mod} ->
-            {ok, State#startup_state{backend_name = Name, backend_module = Mod}};
-        {error, Error} ->
-            {error, Error}
-    end.
+-spec initialize_backend(#startup_state{}) -> {ok, #startup_state{}} | {error, iolist()}.
+initialize_backend(State) ->
+  case detect_backend(autocluster_config:get(backend)) of
+    {ok, Name, Mod} ->
+      {ok, State#startup_state{backend_name = Name, backend_module = Mod}};
+    {ok, Name, Mod, RequiredApps} ->
+      autocluster_log:info("Starting backend ~s dependencies: ~p", [Name, RequiredApps]),
+      _ = [ application:ensure_all_started(App) || App <- RequiredApps],
+      {ok, State#startup_state{backend_name = Name, backend_module = Mod}};
+    {error, Error} ->
+      {error, Error}
+  end.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -443,10 +447,12 @@ choose_best_node(_) ->
 %% internal name and module name.
 %% @end
 %%--------------------------------------------------------------------
--spec detect_backend(atom()) -> {ok, atom(), module()} | {error, iolist()}.
+-spec detect_backend(atom()) -> Backend | BackendWithDeps | {error, iolist()} when
+    Backend :: {ok, atom(), module()},
+    BackendWithDeps :: {ok, atom(), module(), [atom()]}.
 detect_backend(aws) ->
   autocluster_log:debug("Using AWS backend"),
-  {ok, aws, autocluster_aws};
+  {ok, aws, autocluster_aws, [rabbitmq_aws]};
 
 detect_backend(consul) ->
   autocluster_log:debug("Using consul backend"),

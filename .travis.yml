@@ -87,7 +87,7 @@ script:
 before_deploy:
   - make clean
   - make dist
-  - tar cvfz autocluster-${TRAVIS_TAG}.tgz plugins/autocluster-${TRAVIS_TAG}.ez plugins/rabbitmq_aws-*.ez
+  - tar cvfz autocluster-${TRAVIS_TAG}.tgz plugins/autocluster*.ez plugins/rabbitmq_aws-*.ez
   - echo "TRAVIS_OTP_RELEASE = ${TRAVIS_OTP_RELEASE}"
 
 deploy:

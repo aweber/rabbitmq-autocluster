@@ -20,6 +20,6 @@
       autocluster_sup,
       autocluster_util]},
     {registered, [autocluster_app, autocluster_sup, autocluster_cleanup]},
-    {applications, [kernel, stdlib, ssl, rabbit, inets, rabbitmq_aws]}
+    {applications, [kernel, stdlib, ssl, rabbit, inets]}
   ]
 }.
