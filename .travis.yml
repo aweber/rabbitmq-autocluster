@@ -37,6 +37,7 @@ before_script:
 script:
   - make RABBITMQ_CURRENT_FETCH_URL=https://github.com/rabbitmq/rabbitmq-trick-erlang.mk-into-using-proper-url-for-deps
   - |
+    set -exo pipefail
     function ensure_plt() {
     # We want this to happen after ct run, so `rabbit` dependency will be fetched.
     # Then we can add rabbit/rabbit_common to plt, thus getting 0
@@ -65,6 +66,8 @@ script:
 
     if [ "$TRAVIS_OTP_RELEASE" == "19.1" ]; then
       export PROPER_ONLY=true
+    else
+      export PROPER_ONLY=
     fi
 
     case "$PROPER_ONLY" in
@@ -76,13 +79,17 @@ script:
             ;;
         *)
             pip install --user codecov
-            make ct COVER=true
+            if ! make test-build ct COVER=true IS_APP=1; then
+                upload_logs
+                exit 1
+            fi
             ensure_plt
             make dialyze
             ./bin/covertool -cover ct.coverdata -appname autocluster
             codecov -f coverage.xml -X search
             ;;
     esac
+    set +exo pipefail
 
 before_deploy:
   - make clean
