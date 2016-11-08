@@ -298,7 +298,7 @@ wait_for_notifies(#server_state{contenders = Contenders, current_lock_holder = C
             State1 = State0#server_state{broken_locks = maps:remove(Name, Broken)},
             wait_for_notifies(State1)
     after
-        1500 -> %% Slightly more than sleep in autocluster_etcd:wait_for_lock_release/0
+        1900 -> %% Slightly more than sleep in autocluster_etcd:wait_for_lock_release/0
             State0
     end.
 

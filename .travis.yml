@@ -69,7 +69,7 @@ script:
 
     case "$PROPER_ONLY" in
         true)
-            if ! make ct CT_SUITES=etcd; then
+            if ! make test-build ct IS_APP=1 CT_SUITES=etcd; then
                 upload_logs
                 exit 1
             fi
