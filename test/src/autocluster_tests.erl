@@ -47,35 +47,48 @@ run_steps_state_is_updated_test() ->
     Step2 = fun (#startup_state{backend_name = from_step_1} = S) -> {ok, S} end,
     ?assertEqual(ok, autocluster:run_steps([Step1, Step2], #startup_state{})).
 
+initialize_backend_starts_required_apps_test_() ->
+  autocluster_testing:with_mock(
+    [{application, [unstick, passthrough]}],
+    fun () ->
+        meck:expect(application, ensure_all_started, fun (rabbitmq_aws) -> ok end),
+        autocluster_testing:reset(),
+        os:putenv("AUTOCLUSTER_TYPE", "aws"),
+        {ok, _} = autocluster:initialize_backend(#startup_state{}),
+        ?assert(meck:called(application, ensure_all_started, '_'))
+    end).
 
-validate_backend_options_update_required_fields_for_all_known_backends_test_() ->
-    Cases = [{aws, autocluster_aws}
-            ,{consul, autocluster_consul}
-            ,{dns, autocluster_dns}
-            ,{etcd, autocluster_etcd}
-            ,{k8s, autocluster_k8s}
-            ],
-    [ {lists:flatten(io_lib:format("'~s' backend is known and corresponds to '~s' mod", [Backend, Mod])),
-       fun () ->
-               autocluster_testing:reset(),
-               os:putenv("AUTOCLUSTER_TYPE", atom_to_list(Backend)),
-               {ok, UpdatedState} = autocluster:validate_backend_options(#startup_state{}),
-               case UpdatedState of
-                   #startup_state{backend_name = Backend, backend_module = Mod} ->
-                       ok;
-                   _ ->
-                       exit({unexpected_state, UpdatedState})
-               end,
-               ok
-       end} || {Backend, Mod} <- Cases].
+initialize_backend_update_required_fields_for_all_known_backends_test_() ->
+  Cases = [{aws, autocluster_aws}
+          ,{consul, autocluster_consul}
+          ,{dns, autocluster_dns}
+          ,{etcd, autocluster_etcd}
+          ,{k8s, autocluster_k8s}
+          ],
+  autocluster_testing:with_mock_each(
+    [{application, [unstick, passthrough]}],
+    [{eunit_title("'~s' backend is known and corresponds to '~s' mod", [Backend, Mod]),
+      fun () ->
+          meck:expect(application, ensure_all_started, fun (_) -> ok end),
+          autocluster_testing:reset(),
+          os:putenv("AUTOCLUSTER_TYPE", atom_to_list(Backend)),
+          {ok, UpdatedState} = autocluster:initialize_backend(#startup_state{}),
+          case UpdatedState of
+            #startup_state{backend_name = Backend, backend_module = Mod} ->
+              ok;
+            _ ->
+              exit({unexpected_state, UpdatedState})
+          end,
+          ok
+      end} || {Backend, Mod} <- Cases]).
 
-validate_backend_options_handle_error_test_() ->
+initialize_backend_handle_error_test_() ->
     Cases = [unconfigured, some_unknown_backend],
     [ {eunit_title("Backend '~s' is treated as an error", [BackendOption]),
        fun () ->
                autocluster_testing:reset(),
                os:putenv("AUTOCLUSTER_TYPE", atom_to_list(BackendOption)),
-               {error, _} = autocluster:validate_backend_options(#startup_state{})
+               {error, _} = autocluster:initialize_backend(#startup_state{})
        end} || BackendOption <- Cases].
 
 acquire_startup_lock_store_lock_data_on_success_test_() ->
