@@ -1,5 +1,0 @@
-rabbitmq-autocluster (0.7.0-pre1-1) unstable; urgency=low
-
-  * Initial release
-
- -- Alexey Lebedeff <binarin@binarin.ru>  Wed, 26 Oct 2016 16:58:51 +0000

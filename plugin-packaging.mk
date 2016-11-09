@@ -179,6 +179,7 @@ package-deb: $(PACKAGES_SOURCE_DIST_FILE)
 	cp -a $(PACKAGES_SOURCE_DIST_FILE) PACKAGES/deb/$(DEBIAN_ORIG_TARBALL)
 	tar -C PACKAGES/deb/$(UNPACKED_DIR) --strip-components=1 -xJf PACKAGES/deb/$(DEBIAN_ORIG_TARBALL)
 	cp -a packaging/deb/debian PACKAGES/deb/$(UNPACKED_DIR)
+	./packaging/deb/generate-changelog.sh "PACKAGES/deb/$(UNPACKED_DIR)/debian/changelog" "$(VERSION)"
 	cd PACKAGES/deb/$(UNPACKED_DIR) && dpkg-buildpackage $(DEB_SIGNING)
 
 package-unix-generic: dist
