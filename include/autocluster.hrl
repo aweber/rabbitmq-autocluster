@@ -51,6 +51,8 @@
          {config, k8s_namespace_path,    "K8S_NAMESPACE_PATH",     "/var/run/secrets/kubernetes.io/serviceaccount/namespace",
                                                                                  string,  false},
          {config, k8s_service_name,      "K8S_SERVICE_NAME",       "rabbitmq",   string,  false},
+         {config, k8s_address_type,      "K8S_ADDRESS_TYPE",       "ip",         string,  false},
+         {config, k8s_hostname_suffix,   "K8S_HOSTNAME_SUFFIX",    "",           string,  false},
 
          {config, etcd_scheme,           "ETCD_SCHEME",            "http",       string,  false}, %% etcd
          {config, etcd_host,             "ETCD_HOST",              "localhost",  string,  false},

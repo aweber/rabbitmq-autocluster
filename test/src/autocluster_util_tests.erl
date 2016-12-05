@@ -132,6 +132,12 @@ backend_module_test_() ->
           ?assertEqual(autocluster_etcd, autocluster_util:backend_module())
         end
       },
+      {
+        "k8s", fun() ->
+          os:putenv("AUTOCLUSTER_TYPE", "k8s"),
+          ?assertEqual(autocluster_k8s, autocluster_util:backend_module())
+        end
+      },
       {"unconfigured", fun() ->
           ?assertEqual(undefined, autocluster_util:backend_module())
        end}
