@@ -9,8 +9,8 @@
 
 %% autocluster_backend methods
 -export([nodelist/0,
-         register/0,
-         unregister/0]).
+  register/0,
+  unregister/0]).
 
 %% Export all for unit tests
 -ifdef(TEST).
@@ -28,7 +28,7 @@ nodelist() ->
     case make_request() of
 	{ok, Response} ->
 	    Addresses = extract_node_list(Response),
-	    {ok, lists:map(fun autocluster_util:node_name/1, Addresses)};
+	    {ok, lists:map(fun node_name/1, Addresses)};
 	{error, Reason} ->
 	    autocluster_log:info(
 	      "Failed to get nodes from k8s - ~s", [Reason]),
@@ -67,6 +67,13 @@ make_request() ->
       [{"Authorization", ["Bearer ", Token1]}],
       [{ssl, [{cacertfile, autocluster_config:get(k8s_cert_path)}]}]).
 
+%% @spec node_name(k8s_endpoint) -> list()
+%% @doc Return a full rabbit node name, appending hostname suffix
+%% @end
+%%
+node_name(Address) ->
+  autocluster_util:node_name(
+    autocluster_util:as_string(Address) ++ autocluster_config:get(k8s_hostname_suffix)).
 
 %% @spec extract_node_list(k8s_endpoints()) -> list()
 %% @doc Return a list of nodes
@@ -74,7 +81,7 @@ make_request() ->
 %% @end
 %%
 extract_node_list({struct, Response}) ->
-    IpLists = [[proplists:get_value(<<"ip">>, Address)
+    IpLists = [[proplists:get_value(list_to_binary(autocluster_config:get(k8s_address_type)), Address)
 		|| {struct, Address} <- proplists:get_value(<<"addresses">>, Subset)]
 	       || {struct, Subset} <- proplists:get_value(<<"subsets">>, Response)],
     sets:to_list(sets:union(lists:map(fun sets:from_list/1, IpLists))).
