@@ -221,7 +221,7 @@ node_list_qargs(Cluster) -> [passing, {tag, Cluster}].
 -spec registration_body() -> {ok, Body :: binary()} | {error, atom()}.
 registration_body() ->
   Payload = autocluster_consul:build_registration_body(),
-  registration_body(rabbit_misc:json_encode(Payload)).
+  registration_body(rabbit_json:encode(Payload)).
 
 
 %%--------------------------------------------------------------------
