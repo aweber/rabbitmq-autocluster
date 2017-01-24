@@ -123,7 +123,7 @@ base_path() ->
 %% @end
 %%
 extract_nodes([], Nodes) -> Nodes;
-extract_nodes([{struct, H}|T], Nodes) ->
+extract_nodes([H|T], Nodes) ->
   extract_nodes(T, lists:append(Nodes, [get_node_from_key(proplists:get_value(<<"key">>, H))])).
 
 
@@ -132,15 +132,12 @@ extract_nodes([{struct, H}|T], Nodes) ->
 %% @end
 %%
 extract_nodes([]) -> [];
-extract_nodes({struct, Nodes}) ->
-  {struct, Dir} = proplists:get_value(<<"node">>, Nodes),
+extract_nodes(Nodes) ->
+  Dir = proplists:get_value(<<"node">>, Nodes),
   case proplists:get_value(<<"nodes">>, Dir) of
     undefined -> [];
     Values    -> extract_nodes(Values, [])
-  end;
-extract_nodes(Miss) ->
-  io:format("Unparsed: ~p~n", [Miss]),
-  [].
+  end.
 
 
 %% @spec get_node_from_key(string()) -> string()

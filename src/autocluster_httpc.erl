@@ -201,7 +201,8 @@ delete(Scheme, Host, Port, Path, Args, Body) ->
 %%
 decode_body(_, []) -> [];
 decode_body(?CONTENT_JSON, Body) ->
-  case rabbit_json:decode(autocluster_util:as_string(Body)) of
+
+  case autocluster_util:decode_json(autocluster_util:as_string(Body)) of
     {ok, Value} -> Value;
     error       -> []
   end.
