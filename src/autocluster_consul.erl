@@ -173,12 +173,12 @@ extract_nodes(Data) -> extract_nodes(Data, []).
 -spec extract_nodes(ConsulResult :: list(), Nodes :: list())
     -> list().
 extract_nodes([], Nodes)    -> Nodes;
-extract_nodes([{struct, H}|T], Nodes) ->
-  {struct, Service} = proplists:get_value(<<"Service">>, H),
+extract_nodes([H|T], Nodes) ->
+  Service = proplists:get_value(<<"Service">>, H),
   Value = proplists:get_value(<<"Address">>, Service),
   NodeName = case autocluster_util:as_string(Value) of
     "" ->
-      {struct, NodeData} = proplists:get_value(<<"Node">>, H),
+      NodeData = proplists:get_value(<<"Node">>, H),
       Node = proplists:get_value(<<"Node">>, NodeData),
       autocluster_util:node_name(Node);
     Address ->
@@ -221,7 +221,7 @@ node_list_qargs(Cluster) -> [passing, {tag, Cluster}].
 -spec registration_body() -> {ok, Body :: binary()} | {error, atom()}.
 registration_body() ->
   Payload = autocluster_consul:build_registration_body(),
-  registration_body(rabbit_json:encode(Payload)).
+  registration_body(rabbit_json:try_encode(Payload)).
 
 
 %%--------------------------------------------------------------------
@@ -236,7 +236,7 @@ registration_body() ->
                                     {error, Reason :: atom()})
   -> {ok, Body :: binary()} | {error, Reason :: atom()}.
 registration_body({ok, Body}) ->
-  {ok, list_to_binary(Body)};
+  {ok, Body};
 registration_body({error, Reason}) ->
   autocluster_log:error("Error serializing the request body: ~p",
     [Reason]),

@@ -6,12 +6,12 @@
 
 
 extract_nodes_test() ->
-  Values = {struct, [
-              {<<"node">>, {struct, [
+  Values =  [
+              {<<"node">>, [
                 {<<"nodes">>, [
-                  {struct, [{<<"key">>, <<"rabbitmq/default/foo">>}]},
-                  {struct, [{<<"key">>, <<"rabbitmq/default/bar">>}]},
-                  {struct, [{<<"key">>, <<"rabbitmq/default/baz">>}]}]}]}}]},
+                   [{<<"key">>, <<"rabbitmq/default/foo">>}],
+                  [{<<"key">>, <<"rabbitmq/default/bar">>}],
+                    [{<<"key">>, <<"rabbitmq/default/baz">>}]]}]}],
   Expectation = ['rabbit@foo', 'rabbit@bar', 'rabbit@baz'],
   ?assertEqual(Expectation, autocluster_etcd:extract_nodes(Values)).
 
@@ -31,17 +31,17 @@ node_path_test() ->
   ?assertEqual(Expectation, autocluster_etcd:node_path()).
 
 nodelist_without_existing_directory_test_() ->
-  EtcdNodesResponse = {struct,[{<<"action">>,<<"get">>},
+  EtcdNodesResponse = [{<<"action">>,<<"get">>},
                                {<<"node">>,
-                                {struct,[{<<"key">>,<<"/rabbitmq/default">>},
+                                   [{<<"key">>,<<"/rabbitmq/default">>},
                                          {<<"dir">>,true},
                                          {<<"nodes">>,
-                                          [{struct,[{<<"key">>,<<"/rabbitmq/default/docker-autocluster-4">>},
+                                          [[{<<"key">>,<<"/rabbitmq/default/docker-autocluster-4">>},
                                                     {<<"value">>,<<"enabled">>},
                                                     {<<"expiration">>, <<"2016-07-04T12:47:17.245647965Z">>},
                                                     {<<"ttl">>,23},
                                                     {<<"modifiedIndex">>,3976},
-                                                    {<<"createdIndex">>,3976}]}]}]}}]},
+                                                    {<<"createdIndex">>,3976}]]}]}],
   autocluster_testing:with_mock(
     [autocluster_httpc],
     [{"etcd backend creates directory when it's missing",

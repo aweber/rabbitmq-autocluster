@@ -14,6 +14,7 @@
          node_hostname/0,
          node_name/1,
          parse_port/1,
+         try_decode_json/1,
          decode_json/1]).
 
 
@@ -257,22 +258,14 @@ parse_port(Value) when is_list(Value) ->
 parse_port(Value) -> as_integer(Value).
 
 
--spec decode(jsx:json_text()) -> jsx:json_term().
-decode(JSON) ->
-  jsx:decode(JSON).
-
-
--spec try_decode(jsx:json_text()) -> {ok, jsx:json_term()} | error.
-try_decode(JSON) ->
-  try
-    {ok, decode(JSON)}
-  catch error:_ ->
-    error
-  end.
-
+-spec try_decode_json(jsx:json_text()) -> jsx:json_term().
+try_decode_json(JSON) when is_binary(JSON) ->
+  rabbit_json:try_decode(JSON);
+try_decode_json(JSON) ->
+    try_decode_json(list_to_binary(JSON)).
 
 -spec decode_json(jsx:json_text()) -> jsx:json_term().
 decode_json(JSON) when is_binary(JSON) ->
-  try_decode(JSON);
+    rabbit_json:decode(JSON);
 decode_json(JSON) ->
     decode_json(list_to_binary(JSON)).
