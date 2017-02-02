@@ -13,9 +13,7 @@
          nic_ipv4/1,
          node_hostname/0,
          node_name/1,
-         parse_port/1,
-         try_decode_json/1,
-         decode_json/1]).
+         parse_port/1]).
 
 
 %% Export all for unit tests
@@ -258,14 +256,3 @@ parse_port(Value) when is_list(Value) ->
 parse_port(Value) -> as_integer(Value).
 
 
--spec try_decode_json(jsx:json_text()) -> jsx:json_term().
-try_decode_json(JSON) when is_binary(JSON) ->
-  rabbit_json:try_decode(JSON);
-try_decode_json(JSON) ->
-    try_decode_json(list_to_binary(JSON)).
-
--spec decode_json(jsx:json_text()) -> jsx:json_term().
-decode_json(JSON) when is_binary(JSON) ->
-    rabbit_json:decode(JSON);
-decode_json(JSON) ->
-    decode_json(list_to_binary(JSON)).
