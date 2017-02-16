@@ -47,7 +47,7 @@ unregister() -> ok.
 %%
 build_node_list() ->
   Name = autocluster_config:get(autocluster_host),
-  Hosts = [extract_host(inet_res:gethostbyaddr(A)) || A <- inet_res:lookup(Name, in, a)],
+  Hosts = [extract_host(inet:gethostbyaddr(A)) || A <- inet_res:lookup(Name, in, a)],
   lists:filter(fun(E) -> E =/= error end, Hosts).
 
 
