@@ -180,7 +180,7 @@ extract_nodes([{struct, H}|T], Nodes) ->
     "" ->
       {struct, NodeData} = proplists:get_value(<<"Node">>, H),
       Node = proplists:get_value(<<"Node">>, NodeData),
-      autocluster_util:node_name(Node);
+      maybe_add_domain(autocluster_util:node_name(Node));
     Address ->
       autocluster_util:node_name(Address)
   end,
@@ -453,3 +453,21 @@ service_id(Service, Address) ->
 -spec service_ttl(TTL :: integer()) -> string().
 service_ttl(Value) ->
   autocluster_util:as_string(Value) ++ "s".
+
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Append Consul domain if long names are in use
+%% @end
+%%--------------------------------------------------------------------
+-spec maybe_add_domain(Domain :: atom()) -> atom().
+maybe_add_domain(Value) ->
+  case autocluster_config:get(consul_use_longname) of
+      true ->
+          list_to_atom(string:join([atom_to_list(Value),
+                                    "node",
+                                    autocluster_config:get(consul_domain)],
+                                   "."));
+      false -> Value
+  end.

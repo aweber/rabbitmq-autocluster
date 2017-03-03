@@ -31,12 +31,14 @@
          {config, consul_scheme,         "CONSUL_SCHEME",          "http",       string,  false},
          {config, consul_host,           "CONSUL_HOST",            "localhost",  string,  false},
          {config, consul_port,           "CONSUL_PORT",            8500,         integer, true},
+         {config, consul_domain,         "CONSUL_DOMAIN",          "consul",     string,  false},
          {config, consul_svc,            "CONSUL_SVC",             "rabbitmq",   string,  false},
          {config, consul_svc_addr,       "CONSUL_SVC_ADDR",        "undefined",  string,  false},
          {config, consul_svc_addr_auto,  "CONSUL_SVC_ADDR_AUTO",   false,        atom,    false},
          {config, consul_svc_addr_nic,   "CONSUL_SVC_ADDR_NIC",    "undefined",  string,  false},
          {config, consul_svc_port,       "CONSUL_SVC_PORT",        5672,         integer, true},
          {config, consul_svc_ttl,        "CONSUL_SVC_TTL",         30,           integer, false},
+         {config, consul_use_longname,   "CONSUL_USE_LONGNAME",    false,        atom,    false},
 
          {config, autocluster_host,      "AUTOCLUSTER_HOST",       "undefined",  string,  false}, %% DNS
 
