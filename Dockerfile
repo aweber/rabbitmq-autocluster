@@ -1,7 +1,7 @@
 FROM alpine:3.4
 
 # Version of RabbitMQ to install
-ENV RABBITMQ_VERSION=3.6.2 \
+ENV RABBITMQ_VERSION=3.6.6 \
     ERL_EPMD_PORT=4369 \
     HOME=/var/lib/rabbitmq \
     PATH=/usr/lib/rabbitmq/sbin:$PATH \
@@ -28,6 +28,8 @@ RUN \
   apk --purge del curl tar gzip xz
 
 COPY root/ /
+ADD  plugins/rabbitmq_aws-*.ez /usr/lib/rabbitmq/plugins/    
+ADD  plugins/autocluster-*.ez /usr/lib/rabbitmq/plugins/
 
 # Fetch the external plugins and setup RabbitMQ
 RUN \
@@ -35,10 +37,9 @@ RUN \
   cp /var/lib/rabbitmq/.erlang.cookie /root/ && \
   chown rabbitmq /var/lib/rabbitmq/.erlang.cookie && \
   chmod 0600 /var/lib/rabbitmq/.erlang.cookie /root/.erlang.cookie && \
-  chown -R rabbitmq /usr/lib/rabbitmq /var/lib/rabbitmq && \
+  chown -R rabbitmq /usr/lib/rabbitmq /var/lib/rabbitmq && sync && \
   /usr/lib/rabbitmq/sbin/rabbitmq-plugins --offline enable \
     rabbitmq_management \
-    rabbitmq_management_visualiser \
     rabbitmq_consistent_hash_exchange \
     rabbitmq_federation \
     rabbitmq_federation_management \
