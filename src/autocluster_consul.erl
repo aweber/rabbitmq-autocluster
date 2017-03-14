@@ -111,12 +111,42 @@ send_health_check_pass() ->
                              [v1, agent, check, pass, Service],
                              maybe_add_acl([])) of
     {ok, []} -> ok;
+    {error, "500"} ->
+          maybe_re_register(wait_nodelist());
     {error, Reason} ->
-      autocluster_log:error("Error updating Consul health check: ~p",
-                            [Reason]),
+          autocluster_log:error("Error updating Consul health check: ~p",
+                                [Reason]),
       ok
   end.
 
+maybe_re_register({error, Reason}) ->
+    autocluster_log:error("Internal error in Consul while updating health check. "
+                          "Cannot obtain list of nodes registered in Consul either: ~p",
+                          [Reason]);
+maybe_re_register({ok, Members}) ->
+    case lists:member(node(), Members) of
+        true ->
+            autocluster_log:error("Internal error in Consul while updating health check",
+                                  []);
+        false ->
+            autocluster_log:error("Internal error in Consul while updating health check, "
+                                  "node is not registered. Re-registering", []),
+            register()
+    end.
+
+wait_nodelist() ->
+    wait_nodelist(60).
+
+wait_nodelist(N) ->
+    case {nodelist(), N} of
+        {Reply, 0} ->
+            Reply;
+        {{ok, _} = Reply, _} ->
+            Reply;
+        {{error, _}, _} ->
+            timer:sleep(1000),
+            wait_nodelist(N - 1)
+    end.
 
 %%--------------------------------------------------------------------
 %% @doc
