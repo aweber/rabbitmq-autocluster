@@ -16,7 +16,7 @@ dep_rabbitmq_aws = git https://github.com/gmr/rabbitmq-aws.git 0.1.3
 
 ERLANG_MK_REPO = https://github.com/rabbitmq/erlang.mk.git
 ERLANG_MK_COMMIT = rabbitmq-tmp
-BUILD_DEPS+= ranch
+BUILD_DEPS+= rabbit ranch
 current_rmq_ref = stable
 
 include rabbitmq-components.mk
