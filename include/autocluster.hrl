@@ -37,7 +37,7 @@
          {config, consul_svc_addr_nic,   "CONSUL_SVC_ADDR_NIC",    "undefined",  string,  false},
          {config, consul_svc_port,       "CONSUL_SVC_PORT",        5672,         integer, true},
          {config, consul_svc_ttl,        "CONSUL_SVC_TTL",         30,           integer, false},
-         {config, consul_deregister_after, "CONSUL_DEREGISTER_AFTER", undefined, atom,    false}, %% consul deregister_critical_service_after
+         {config, consul_deregister_after, "CONSUL_DEREGISTER_AFTER", "",        integer,    false}, %% consul deregister_critical_service_after
 
          {config, autocluster_host,      "AUTOCLUSTER_HOST",       "undefined",  string,  false}, %% DNS
 

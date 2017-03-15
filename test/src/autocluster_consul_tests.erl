@@ -87,13 +87,32 @@ build_registration_body_test_() ->
         ?assertEqual(Expectation, autocluster_consul:build_registration_body())
       end},
       {"with deregister set", fun() ->
-        os:putenv("CONSUL_DEREGISTER_AFTER", 257),
+        os:putenv("CONSUL_DEREGISTER_AFTER", "257"),
         Expectation = [{'ID','rabbitmq'},
           {'Name',rabbitmq},
           {'Port',5672},
           {'Check',
-            [{'Deregister_critical_service_after','257s'}]}],
-
+            [{'Notes','RabbitMQ Auto-Cluster Plugin TTL Check'},
+              {'TTL','30s'},
+              {'Deregister_critical_service_after','257s'}]}],
+        ?assertEqual(Expectation, autocluster_consul:build_registration_body())
+      end},
+      {"with unset deregister and ttl set", fun() ->
+        os:putenv("CONSUL_DEREGISTER_AFTER", ""),
+        os:putenv("CONSUL_SVC_TTL", ""),
+        Expectation = [{'ID','rabbitmq'},
+          {'Name',rabbitmq},
+          {'Port',5672}],
+        ?assertEqual(Expectation, autocluster_consul:build_registration_body())
+      end},
+      %% CONSUL_DEREGISTER_AFTER has be ignored because can't be triggered
+      %% without using TTL
+      {"with set only deregister set", fun() ->
+        os:putenv("CONSUL_SVC_TTL", ""),
+        os:putenv("CONSUL_DEREGISTER_AFTER", "123"),
+        Expectation = [{'ID','rabbitmq'},
+          {'Name',rabbitmq},
+          {'Port',5672}],
         ?assertEqual(Expectation, autocluster_consul:build_registration_body())
       end}
     ]

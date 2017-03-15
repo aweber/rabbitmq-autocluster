@@ -367,9 +367,11 @@ registration_body_maybe_add_check(Payload) ->
     -> list().
 registration_body_maybe_add_check(Payload, undefined) ->
     case registration_body_maybe_add_deregister([]) of
-        [{'Deregister_critical_service_after', Value}]->
-            Check = [{'Check', [{'Deregister_critical_service_after', Value}]}],
-            lists:append(Payload, Check);
+        [{'Deregister_critical_service_after', _}]->
+            autocluster_log:warning("Can't use Consul Deregister After without " ++
+            "using TTL. The parameter CONSUL_DEREGISTER_AFTER will be ignored"),
+            Payload;
+
         _ -> Payload
     end;
 registration_body_maybe_add_check(Payload, TTL) ->
@@ -423,7 +425,7 @@ registration_body_maybe_add_deregister(Payload, undefined) -> Payload;
 registration_body_maybe_add_deregister(Payload, Deregister_After) ->
     Deregister = {'Deregister_critical_service_after',
         list_to_atom(service_ttl(Deregister_After))},
-    [Deregister | Payload].
+    Payload ++ [Deregister].
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
