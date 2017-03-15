@@ -79,11 +79,21 @@ build_registration_body_test_() ->
                          {'TTL','30s'}]}],
         ?assertEqual(Expectation, autocluster_consul:build_registration_body())
        end},
-      {"with addr set", fun() ->
+      {"with ttl set", fun() ->
         os:putenv("CONSUL_SVC_TTL", ""),
         Expectation = [{'ID','rabbitmq'},
                        {'Name',rabbitmq},
                        {'Port',5672}],
+        ?assertEqual(Expectation, autocluster_consul:build_registration_body())
+      end},
+      {"with deregister set", fun() ->
+        os:putenv("CONSUL_DEREGISTER_AFTER", 257),
+        Expectation = [{'ID','rabbitmq'},
+          {'Name',rabbitmq},
+          {'Port',5672},
+          {'Check',
+            [{'Deregister_critical_service_after','257s'}]}],
+
         ?assertEqual(Expectation, autocluster_consul:build_registration_body())
       end}
     ]
