@@ -71,7 +71,9 @@ nodelist() ->
                               autocluster_config:get(consul_svc)],
                              node_list_qargs()) of
     {ok, Nodes} ->
-      {ok, extract_nodes(Nodes)};
+      {ok, extract_nodes(
+             filter_nodes(Nodes,
+                          autocluster_config:get(consul_allow_warn)))};
     Error       -> Error
   end.
 
@@ -165,6 +167,30 @@ extract_nodes(Data) -> extract_nodes(Data, []).
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
+%% If nodes with health checks with 'warning' status are accepted, perform
+%% the filtering, only selecting those with 'warning' or 'passing' status
+%% @end
+%%--------------------------------------------------------------------
+-spec filter_nodes(ConsulResult :: list(), AllowWarning :: atom()) -> list().
+filter_nodes(Nodes, Warn) ->
+  case Warn of
+    true ->
+      lists:filter(fun({struct, Node}) ->
+                    Checks = proplists:get_value(<<"Checks">>, Node),
+                    lists:all(fun({struct, Check}) ->
+                      lists:member(proplists:get_value(<<"Status">>, Check),
+                                   [<<"passing">>, <<"warning">>])
+                              end,
+                              Checks)
+                   end,
+                   Nodes);
+    false -> Nodes
+  end.
+
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
 %% Take the list fo data as returned from the call to Consul and
 %% return it as a properly formatted list of rabbitmq cluster
 %% identifier atoms.
@@ -208,9 +234,29 @@ node_list_qargs() ->
 %% @end
 %%--------------------------------------------------------------------
 -spec node_list_qargs(ClusterName :: string()) -> list().
-node_list_qargs("undefined") -> [passing];
-node_list_qargs(Cluster) -> [passing, {tag, Cluster}].
+node_list_qargs(Cluster) ->
+  ClusterTag = case Cluster of
+    "undefined" -> [];
+    _           -> [{tag, Cluster}]
+  end,
+  node_list_qargs(ClusterTag, autocluster_config:get(consul_allow_warn)).
 
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Build the query argument list required to fetch the node list from
+%% Consul. Unless nodes with health checks having 'warning' status are
+%% permitted, select only those with 'passing' status. Otherwise return
+%% all for further filtering
+%% @end
+%%--------------------------------------------------------------------
+-spec node_list_qargs(Args :: list(), AllowWarn :: atom()) -> list().
+node_list_qargs(Value, Warn) ->
+    case Warn of
+        true  -> Value;
+        false -> [passing | Value]
+    end.
 
 %%--------------------------------------------------------------------
 %% @private
