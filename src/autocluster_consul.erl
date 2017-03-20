@@ -465,7 +465,8 @@ registration_body_maybe_add_tag(Payload, Cluster) ->
 service_address() ->
   service_address(autocluster_config:get(consul_svc_addr),
                   autocluster_config:get(consul_svc_addr_auto),
-                  autocluster_config:get(consul_svc_addr_nic)).
+                  autocluster_config:get(consul_svc_addr_nic),
+                  autocluster_config:get(consul_svc_addr_nodename)).
 
 
 %%--------------------------------------------------------------------
@@ -480,12 +481,13 @@ service_address() ->
 %%--------------------------------------------------------------------
 -spec service_address(Static :: string(),
                       Auto :: boolean(),
-                      AutoNIC :: string()) -> string().
-service_address(_, true, "undefined") ->
-  autocluster_util:node_hostname();
-service_address(Value, false, "undefined") ->
+                      AutoNIC :: string(),
+                      FromNodename :: boolean()) -> string().
+service_address(_, true, "undefined", FromNodename) ->
+  autocluster_util:node_hostname(FromNodename);
+service_address(Value, false, "undefined", _) ->
   Value;
-service_address(_, false, NIC) ->
+service_address(_, false, NIC, _) ->
   {ok, Addr} = autocluster_util:nic_ipv4(NIC),
   Addr.
 

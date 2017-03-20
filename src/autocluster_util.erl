@@ -11,7 +11,7 @@
          as_string/1,
          backend_module/0,
          nic_ipv4/1,
-         node_hostname/0,
+         node_hostname/1,
          node_name/1,
          parse_port/1]).
 
@@ -155,13 +155,17 @@ nic_ipv4_address([_|T]) ->
 %%--------------------------------------------------------------------
 %% @doc
 %% Return the hostname for the current node (without the tuple)
+%% Hostname can be taken from network info or nodename.
 %% @end
 %%--------------------------------------------------------------------
--spec node_hostname() -> string().
-node_hostname() ->
-  {ok, Hostname} = inet:gethostname(),
-  Hostname.
-
+-spec node_hostname(boolean()) -> string().
+node_hostname(false = _FromNodename) ->
+    {ok, Hostname} = inet:gethostname(),
+    Hostname;
+node_hostname(true = _FromNodename) ->
+    {match, [Hostname]} = re:run(atom_to_list(node()), "@(.*)",
+                                 [{capture, [1], list}]),
+    Hostname.
 
 %%--------------------------------------------------------------------
 %% @doc
