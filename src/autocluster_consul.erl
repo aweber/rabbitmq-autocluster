@@ -365,11 +365,21 @@ registration_body_maybe_add_check(Payload) ->
 -spec registration_body_maybe_add_check(Payload :: list(),
                                         TTL :: integer() | undefined)
     -> list().
-registration_body_maybe_add_check(Payload, undefined) -> Payload;
+registration_body_maybe_add_check(Payload, undefined) ->
+    case registration_body_maybe_add_deregister([]) of
+        [{'Deregister_critical_service_after', _}]->
+            autocluster_log:warning("Can't use Consul Deregister After without " ++
+            "using TTL. The parameter CONSUL_DEREGISTER_AFTER will be ignored"),
+            Payload;
+
+        _ -> Payload
+    end;
 registration_body_maybe_add_check(Payload, TTL) ->
-  Check = [{'Check', [{'Notes', list_to_atom(?CONSUL_CHECK_NOTES)},
-                      {'TTL', list_to_atom(service_ttl(TTL))}]}],
-  lists:append(Payload, Check).
+    CheckItems = [{'Notes', list_to_atom(?CONSUL_CHECK_NOTES)},
+        {'TTL', list_to_atom(service_ttl(TTL))}],
+    Check = [{'Check', registration_body_maybe_add_deregister(CheckItems)}],
+    lists:append(Payload, Check).
+
 
 
 %%--------------------------------------------------------------------
@@ -384,6 +394,38 @@ registration_body_add_port(Payload) ->
                [{'Port', autocluster_config:get(consul_svc_port)}]).
 
 
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Evaluate the configured value for the deregister_critical_service_after.
+%% Consul removes the node after the timeout (If it is set)
+%% Check definition if it is set.
+%%
+%% @end
+%%--------------------------------------------------------------------
+
+registration_body_maybe_add_deregister(Payload) ->
+    Deregister = autocluster_config:get(consul_deregister_after),
+    registration_body_maybe_add_deregister(Payload, Deregister).
+
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Evaluate the configured value for the deregister_critical_service_after.
+%% Consul removes the node after the timeout (If it is set)
+%% Check definition if it is set.
+%% @end
+%%--------------------------------------------------------------------
+
+-spec registration_body_maybe_add_deregister(Payload :: list(),
+    TTL :: integer() | undefined)
+        -> list().
+registration_body_maybe_add_deregister(Payload, undefined) -> Payload;
+registration_body_maybe_add_deregister(Payload, Deregister_After) ->
+    Deregister = {'Deregister_critical_service_after',
+        list_to_atom(service_ttl(Deregister_After))},
+    Payload ++ [Deregister].
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
