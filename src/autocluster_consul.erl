@@ -454,6 +454,25 @@ registration_body_maybe_add_tag(Payload, Cluster) ->
   lists:append(Payload, [{'Tags', [list_to_atom(Cluster)]}]).
 
 
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Validate CONSUL_SVC_ADDR_NODENAME parameter
+%% it can be used if CONSUL_SVC_ADDR_AUTO is true
+%% @end
+%%--------------------------------------------------------------------
+
+-spec validate_addr_parameters(false | true, false | true) -> false | true.
+validate_addr_parameters(false, true) ->
+    autocluster_log:warning("The params CONSUL_SVC_ADDR_NODENAME" ++
+				" can be used only if CONSUL_SVC_ADDR_AUTO is true." ++
+				" CONSUL_SVC_ADDR_NODENAME value will be ignored."),
+    false;
+validate_addr_parameters(_, _) ->
+    true.
+
+
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
@@ -463,6 +482,8 @@ registration_body_maybe_add_tag(Payload, Cluster) ->
 %%--------------------------------------------------------------------
 -spec service_address() -> string().
 service_address() ->
+  validate_addr_parameters(autocluster_config:get(consul_svc_addr_auto),
+      autocluster_config:get(consul_svc_addr_nodename)),
   service_address(autocluster_config:get(consul_svc_addr),
                   autocluster_config:get(consul_svc_addr_auto),
                   autocluster_config:get(consul_svc_addr_nic),
