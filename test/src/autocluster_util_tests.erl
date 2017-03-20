@@ -178,10 +178,12 @@ node_hostname_test_() ->
     end,
     fun autocluster_testing:on_finish/1,
     [
+     %% Hostname from nodename cannot be tested as mocking the 'erlang' module
+     %% causes the test process to hang.
       {
-        "value", fun() ->
+        "hostname from network", fun() ->
           meck:expect(inet, gethostname, fun() -> {ok, "hal4500"} end),
-          ?assertEqual("hal4500", autocluster_util:node_hostname())
+          ?assertEqual("hal4500", autocluster_util:node_hostname(false))
         end
       }
     ]

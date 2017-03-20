@@ -336,7 +336,8 @@ register_test_() ->
         end},
       {"with auto addr",
         fun() ->
-          meck:expect(autocluster_util, node_hostname, fun() -> "bob" end),
+          meck:expect(autocluster_util, node_hostname, fun(true) -> "bob.consul.node";
+                                                          (false) -> "bob" end),
           meck:expect(autocluster_httpc, post,
             fun(Scheme, Host, Port, Path, Args, Body) ->
               ?assertEqual("http", Scheme),
@@ -352,6 +353,30 @@ register_test_() ->
           os:putenv("CONSUL_PORT", "8500"),
           os:putenv("CONSUL_ACL_TOKEN", "token-value"),
           os:putenv("CONSUL_SVC_ADDR_AUTO", "true"),
+          ?assertEqual(ok, autocluster_consul:register()),
+          ?assert(meck:validate(autocluster_httpc)),
+          ?assert(meck:validate(autocluster_util))
+        end},
+      {"with auto addr from nodename",
+        fun() ->
+          meck:expect(autocluster_util, node_hostname, fun(true) -> "bob.consul.node";
+                                                          (false) -> "bob" end),
+          meck:expect(autocluster_httpc, post,
+            fun(Scheme, Host, Port, Path, Args, Body) ->
+              ?assertEqual("http", Scheme),
+              ?assertEqual("consul.service.consul", Host),
+              ?assertEqual(8500, Port),
+              ?assertEqual([v1, agent, service, register], Path),
+              ?assertEqual([{token, "token-value"}], Args),
+              Expect = <<"{\"ID\":\"rabbitmq:bob.consul.node\",\"Name\":\"rabbitmq\",\"Address\":\"bob.consul.node\",\"Port\":5672,\"Check\":{\"Notes\":\"RabbitMQ Auto-Cluster Plugin TTL Check\",\"TTL\":\"30s\"}}">>,
+              ?assertEqual(Expect, Body),
+              {ok, []}
+            end),
+          os:putenv("CONSUL_HOST", "consul.service.consul"),
+          os:putenv("CONSUL_PORT", "8500"),
+          os:putenv("CONSUL_ACL_TOKEN", "token-value"),
+          os:putenv("CONSUL_SVC_ADDR_AUTO", "true"),
+          os:putenv("CONSUL_SVC_ADDR_NODENAME", "true"),
           ?assertEqual(ok, autocluster_consul:register()),
           ?assert(meck:validate(autocluster_httpc)),
           ?assert(meck:validate(autocluster_util))

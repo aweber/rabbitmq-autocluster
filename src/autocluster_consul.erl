@@ -454,6 +454,25 @@ registration_body_maybe_add_tag(Payload, Cluster) ->
   lists:append(Payload, [{'Tags', [list_to_atom(Cluster)]}]).
 
 
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Validate CONSUL_SVC_ADDR_NODENAME parameter
+%% it can be used if CONSUL_SVC_ADDR_AUTO is true
+%% @end
+%%--------------------------------------------------------------------
+
+-spec validate_addr_parameters(false | true, false | true) -> false | true.
+validate_addr_parameters(false, true) ->
+    autocluster_log:warning("The params CONSUL_SVC_ADDR_NODENAME" ++
+				" can be used only if CONSUL_SVC_ADDR_AUTO is true." ++
+				" CONSUL_SVC_ADDR_NODENAME value will be ignored."),
+    false;
+validate_addr_parameters(_, _) ->
+    true.
+
+
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
@@ -463,9 +482,12 @@ registration_body_maybe_add_tag(Payload, Cluster) ->
 %%--------------------------------------------------------------------
 -spec service_address() -> string().
 service_address() ->
+  validate_addr_parameters(autocluster_config:get(consul_svc_addr_auto),
+      autocluster_config:get(consul_svc_addr_nodename)),
   service_address(autocluster_config:get(consul_svc_addr),
                   autocluster_config:get(consul_svc_addr_auto),
-                  autocluster_config:get(consul_svc_addr_nic)).
+                  autocluster_config:get(consul_svc_addr_nic),
+                  autocluster_config:get(consul_svc_addr_nodename)).
 
 
 %%--------------------------------------------------------------------
@@ -480,12 +502,13 @@ service_address() ->
 %%--------------------------------------------------------------------
 -spec service_address(Static :: string(),
                       Auto :: boolean(),
-                      AutoNIC :: string()) -> string().
-service_address(_, true, "undefined") ->
-  autocluster_util:node_hostname();
-service_address(Value, false, "undefined") ->
+                      AutoNIC :: string(),
+                      FromNodename :: boolean()) -> string().
+service_address(_, true, "undefined", FromNodename) ->
+  autocluster_util:node_hostname(FromNodename);
+service_address(Value, false, "undefined", _) ->
   Value;
-service_address(_, false, NIC) ->
+service_address(_, false, NIC, _) ->
   {ok, Addr} = autocluster_util:nic_ipv4(NIC),
   Addr.
 
