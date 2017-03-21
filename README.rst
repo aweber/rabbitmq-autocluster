@@ -16,7 +16,7 @@ Project Maturity and Status
 
 This plugin is not new and has been used in production for more than 2 years.
 
-**This fork is currently not under active development**. [rabbitmq/rabbitmq-autocluster](https://github.com/rabbitmq/rabbitmq-autocluster)
+**This fork is currently not under active development**. `rabbitmq/rabbitmq-autocluster <https://github.com/rabbitmq/rabbitmq-autocluster>`_
 is the new temporary home for this project. Please consider that fork as well.
 
 Key ideas from rabbitmq-autocluster were integrated into RabbitMQ core for the upcoming 3.7.0 release.
