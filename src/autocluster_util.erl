@@ -13,7 +13,9 @@
          nic_ipv4/1,
          node_hostname/1,
          node_name/1,
-         parse_port/1]).
+         parse_port/1,
+         as_proplist/1
+        ]).
 
 
 %% Export all for unit tests
@@ -258,3 +260,18 @@ node_prefix() ->
 parse_port(Value) when is_list(Value) ->
   as_integer(lists:last(string:tokens(Value, ":")));
 parse_port(Value) -> as_integer(Value).
+
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Returns a proplist from a JSON structure (environment variable) or
+%% the settings key (already a proplist).
+%% @end
+%%--------------------------------------------------------------------
+-spec as_proplist(Value :: string() | [{string(), string()}]) ->
+                         [{string(), string()}].
+as_proplist([Tuple | _] = Json) when is_tuple(Tuple) ->
+    Json;
+as_proplist(List) when is_list(List) ->
+    {ok, Json} = rabbit_misc:json_decode(List),
+    [{binary_to_list(K), binary_to_list(V)} || {K, V} <- rabbit_misc:json_to_term(Json)].

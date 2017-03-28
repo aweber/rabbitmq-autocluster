@@ -20,7 +20,7 @@
          {config, node_type,             "RABBITMQ_NODE_TYPE",     disc,         atom,    false},
 
          {config, aws_autoscaling,       "AWS_AUTOSCALING",        false,        atom,    false}, %% AWS
-         {config, aws_ec2_tags,          "AWS_EC2_TAGS",           "undefined",  string,  false},
+         {config, aws_ec2_tags,          "AWS_EC2_TAGS",           "undefined",  proplist,  false},
          {config, aws_access_key,        "AWS_ACCESS_KEY_ID",      "undefined",  string,  false},
          {config, aws_secret_key,        "AWS_SECRET_ACCESS_KEY",  "undefined",  string,  false},
          {config, aws_ec2_region,        "AWS_DEFAULT_REGION",     "undefined",  string,  false},
