@@ -122,4 +122,6 @@ normalize(Config, Value) when Config#config.type =:= atom ->
 normalize(Config, Value) when Config#config.type =:= integer ->
   autocluster_util:as_integer(Value);
 normalize(Config, Value) when Config#config.type =:= string ->
-  autocluster_util:as_string(Value).
+  autocluster_util:as_string(Value);
+normalize(Config, Value) when Config#config.type =:= proplist ->
+  autocluster_util:as_proplist(Value).
