@@ -73,7 +73,7 @@ nodelist() ->
     {ok, Nodes} ->
       {ok, extract_nodes(
              filter_nodes(Nodes,
-                          autocluster_config:get(consul_allow_warn)))};
+                          autocluster_config:get(consul_include_nodes_with_warnings)))};
     Error       -> Error
   end.
 
@@ -269,7 +269,7 @@ node_list_qargs(Cluster) ->
     "undefined" -> [];
     _           -> [{tag, Cluster}]
   end,
-  node_list_qargs(ClusterTag, autocluster_config:get(consul_allow_warn)).
+  node_list_qargs(ClusterTag, autocluster_config:get(consul_include_nodes_with_warnings)).
 
 
 %%--------------------------------------------------------------------

@@ -28,7 +28,7 @@
          {config, cluster_name,          "CLUSTER_NAME",           "undefined",  string,  false}, %% Consul && etcd
 
          {config, consul_acl_token,      "CONSUL_ACL_TOKEN",       "undefined",  string,  false}, %% Consul
-         {config, consul_allow_warn,     "CONSUL_ALLOW_WARN",      false,        atom,    false},
+         {config, consul_include_nodes_with_warnings,     "CONSUL_INCLUDE_NODES_WITH_WARNINGS",      false,        atom,    false},
          {config, consul_scheme,         "CONSUL_SCHEME",          "http",       string,  false},
          {config, consul_host,           "CONSUL_HOST",            "localhost",  string,  false},
          {config, consul_port,           "CONSUL_PORT",            8500,         integer, true},
