@@ -280,11 +280,11 @@ as_proplist(List) when is_list(List) ->
             [{binary_to_list(K), binary_to_list(V)}
              || {K, V} <- rabbit_misc:json_to_term(Json)];
         _ ->
-            autocluster_log:error("Unexpected data type for proplist value: ~p~n",
+            autocluster_log:error("Unexpected data type for proplist value: ~p. JSON parser returned an error!~n",
                                   [List]),
             []
     end;
 as_proplist(Value) ->
-    autocluster_log:error("Unexpected data type for proplist value: ~p~n",
+    autocluster_log:error("Unexpected data type for proplist value: ~p.~n",
                           [Value]),
     [].
