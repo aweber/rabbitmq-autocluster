@@ -1,36 +1,3 @@
-   * [RabbitMQ Autocluster](#rabbitmq-autocluster)
-      * [Current Maintainers](#current-maintainers)
-      * [Supported RabbitMQ Versions](#supported-rabbitmq-versions)
-      * [Supported Erlang Versions](#supported-erlang-versions)
-      * [Binary Releases](#binary-releases)
-      * [Installation](#installation)
-      * [Configuration](#configuration)
-         * [General settings](#general-settings)
-            * [Available Settings](#available-settings)
-            * [Details](#details)
-            * [AWS API Configuration and Credentials](#aws-api-configuration-and-credentials)
-            * [AWS Credentials and Configuration Settings](#aws-credentials-and-configuration-settings)
-            * [IAM Policy](#iam-policy)
-            * [Example Configuration](#example-configuration)
-            * [Example Cloud-Init](#example-cloud-init)
-         * [Consul configuration](#consul-configuration)
-         * [Configuration Details](#configuration-details)
-            * [Example rabbitmq.config](#example-rabbitmqconfig)
-         * [DNS configuration](#dns-configuration)
-            * [Example Configuration](#example-configuration-1)
-            * [Troubleshooting](#troubleshooting)
-         * [etcd configuration](#etcd-configuration)
-         * [K8S configuration](#k8s-configuration)
-            * [Kubernetes Setup](#kubernetes-setup)
-      * [Development](#development)
-            * [Requirements](#requirements)
-            * [Setup](#setup)
-      * [Development environment](#development-environment)
-            * [Make Commands](#make-commands)
-            * [Docker](#docker)
-            * [Testing Consul behaviors](#testing-consul-behaviors)
-      * [License](#license)
-
 RabbitMQ Autocluster
 ====================
 
@@ -101,6 +68,24 @@ As of version ``0.5`` the autocluster plugin does not have a default backend con
 
 Configuration
 -------------
+
+  * [General settings](#general-settings)
+     * [Available Settings](#available-settings)
+     * [Details](#details)
+     * [AWS API Configuration and Credentials](#aws-api-configuration-and-credentials)
+     * [AWS Credentials and Configuration Settings](#aws-credentials-and-configuration-settings)
+     * [IAM Policy](#iam-policy)
+     * [Example Configuration](#example-configuration)
+     * [Example Cloud-Init](#example-cloud-init)
+  * [Consul configuration](#consul-configuration)
+     * [Configuration Details](#configuration-details)
+     * [Example rabbitmq.config](#example-rabbitmqconfig)
+  * [DNS configuration](#dns-configuration)
+     * [Example Configuration](#example-configuration-1)
+     * [Troubleshooting](#troubleshooting)
+  * [etcd configuration](#etcd-configuration)
+  * [K8S configuration](#k8s-configuration)
+     * [Kubernetes Setup](#kubernetes-setup)
 
 ### General settings
 
@@ -343,7 +328,7 @@ The following settings impact the configuration of the [Consul](http://consul.io
   <dd>Used to specify the Consul health check TTL interval that is used to let Consul know that RabbitMQ is alive an healthy.</dd>
 </dl>
 
-### Configuration Details
+#### Configuration Details
 
 | Setting               | Environment Variable      | Setting Key                | Type        | Default       |
 |-----------------------|---------------------------|----------------------------|-------------|---------------|
