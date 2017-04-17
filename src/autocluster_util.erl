@@ -13,8 +13,14 @@
          nic_ipv4/1,
          node_hostname/0,
          node_name/1,
-         parse_port/1]).
+         parse_port/1,
+         augment_nodelist/1,
+         stringify_error/1]).
 
+-include("autocluster.hrl").
+
+%% Private exports for RPC
+-export([augmented_node_info/0]).
 
 %% Export all for unit tests
 -ifdef(TEST).
@@ -25,6 +31,8 @@
                  {netmask,inet:ip_address()} | {broadaddr,inet:ip_address()} |
                  {dstaddr,inet:ip_address()} | {hwaddr,[byte()]}.
 
+-type stringifyable() :: atom() | binary() | string() | integer().
+-export_type([stringifyable/0]).
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -68,7 +76,7 @@ as_integer(Value) ->
 %% Return the passed in value as a string.
 %% @end
 %%--------------------------------------------------------------------
--spec as_string(Value :: atom() | binary() | integer() | string())
+-spec as_string(Value :: stringifyable())
     -> string().
 as_string([]) -> "";
 as_string(Value) when is_atom(Value) ->
@@ -254,3 +262,44 @@ node_prefix() ->
 parse_port(Value) when is_list(Value) ->
   as_integer(lists:last(string:tokens(Value, ":")));
 parse_port(Value) -> as_integer(Value).
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Filters dead nodes from node list, augments it with additional
+%% information - what other nodes it is clustered with, uptime and all
+%% other pieces of information necessary to choose the best node to
+%% join to.
+%% @end
+%%--------------------------------------------------------------------
+-spec augment_nodelist([node()]) -> [#augmented_node{}].
+augment_nodelist(Nodes) ->
+    {ResL, _BadNodeNames} = rpc:multicall(Nodes, autocluster_util, augmented_node_info, [], 5000),
+    [ A || A = #augmented_node{} <- ResL ].
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Collects information for clustering decisions on the current
+%% node. Only called using RPC from augment_nodelist/1.
+%% @end
+%%--------------------------------------------------------------------
+-spec augmented_node_info() -> #augmented_node{}.
+augmented_node_info() ->
+    Running = rabbit_mnesia:cluster_nodes(running),
+    Partitioned = rabbit_node_monitor:partitions(),
+    #augmented_node{
+       name = node(),
+       uptime = element(1, erlang:statistics(wall_clock)),
+       alive = true,
+       clustered_with = rabbit_mnesia:cluster_nodes(all),
+       alive_cluster_nodes = Running -- Partitioned,
+       partitioned_cluster_nodes = Partitioned,
+       other_cluster_nodes = []
+      }.
+
+-spec stringify_error({ok, term()} | {error, term()}) -> {ok, term()} | {error, string()}.
+stringify_error({ok, _} = Res) ->
+    Res;
+stringify_error({error, Str}) when is_list(Str) ->
+    {error, Str};
+stringify_error({error, Term}) ->
+    {error, lists:flatten(io_lib:format("~w", [Term]))}.

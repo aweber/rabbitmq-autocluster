@@ -9,60 +9,30 @@
 
 %% autocluster_backend methods
 -export([nodelist/0,
+         lock/1,
+         unlock/1,
          register/0,
          unregister/0]).
 
-%% For timer based health checking
--export([init/0,
-         send_health_check_pass/0]).
-
 %% Ignore this (is used so we can stub with meck in tests)
 -export([build_registration_body/0]).
+
+%% For timer based health checking
+-export([send_health_check_pass/0]).
 
 %% Export all for unit tests
 -ifdef(TEST).
 -compile(export_all).
 -endif.
 
-
--rabbit_boot_step({?MODULE,
-                   [{description, <<"Autocluster Consul Initialization">>},
-                    {mfa,         {autocluster_consul, init, []}},
-                    {requires,    notify_cluster}]}).
-
-
 -include("autocluster.hrl").
-
-
-%%--------------------------------------------------------------------
-%% @doc
-%% Kick of the Consul TTL health check pass timer. Have the timer
-%% fire at half the expected TTL to ensure the service is never
-%% marked as offline by Consul.
-%% @end
-%%--------------------------------------------------------------------
--spec init() -> ok.
-init() ->
-  case autocluster_config:get(backend) of
-    consul ->
-      case autocluster_config:get(consul_svc_ttl) of
-        undefined -> ok;
-        Interval  ->
-          autocluster_log:debug("Starting Consul health check TTL timer"),
-          {ok, _} = timer:apply_interval(Interval * 500, ?MODULE,
-                                         send_health_check_pass, []),
-          ok
-      end;
-    _ -> ok
-  end.
-
 
 %%--------------------------------------------------------------------
 %% @doc
 %% Return a list of healthy nodes registered in Consul
 %% @end
 %%--------------------------------------------------------------------
--spec nodelist() -> {ok, list()}|{error, Reason :: string()}.
+-spec nodelist() -> {ok, [node()]}|{error, Reason :: string()}.
 nodelist() ->
   case autocluster_httpc:get(autocluster_config:get(consul_scheme),
                              autocluster_config:get(consul_host),
@@ -75,6 +45,13 @@ nodelist() ->
     Error       -> Error
   end.
 
+-spec lock(string()) -> not_supported.
+lock(_) ->
+    not_supported.
+
+-spec unlock(term()) -> ok.
+unlock(_) ->
+    ok.
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -90,8 +67,15 @@ register() ->
                                   autocluster_config:get(consul_port),
                                   [v1, agent, service, register],
                                   maybe_add_acl([]), Body) of
-        {ok, _} -> ok;
-        Error   -> Error
+        {ok, _} ->
+              case autocluster_config:get(consul_svc_ttl) of
+                  undefined -> ok;
+                  Interval ->
+                      autocluster_periodic:start_delayed(autocluster_consul_node_key_updater, Interval * 500,
+                                                         {?MODULE, send_health_check_pass, []}),
+                      ok
+              end;
+        Error   -> autocluster_util:stringify_error(Error)
       end;
     Error -> Error
   end.

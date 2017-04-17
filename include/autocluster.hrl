@@ -11,6 +11,7 @@
         [{config, backend,               "AUTOCLUSTER_TYPE",       unconfigured, atom,    false}, %% General
          {config, autocluster_failure,   "AUTOCLUSTER_FAILURE",    ignore,       atom,    false},
          {config, startup_delay,         "AUTOCLUSTER_DELAY",      5,            integer, false},
+         {config, lock_wait_time,        "LOCK_WAIT_TIME",         300,          integer, false},
          {config, cluster_cleanup,       "AUTOCLUSTER_CLEANUP",    false,        atom,    false},
          {config, autocluster_log_level, "AUTOCLUSTER_LOG_LEVEL",  info,         atom,    false},
          {config, cleanup_interval,      "CLEANUP_INTERVAL",       60,           integer, false},
@@ -59,3 +60,30 @@
          {config, etcd_node_ttl,         "ETCD_NODE_TTL",          30,           integer, false}]).
 
 -define(CONSUL_CHECK_NOTES, "RabbitMQ Auto-Cluster Plugin TTL Check").
+
+%%--------------------------------------------------------------------
+%% @doc
+%% State that is being passed around and updated by different
+%% initialization steps.
+%% @end
+%%--------------------------------------------------------------------
+-record(startup_state, {backend_name :: atom()
+                       ,backend_module :: module()
+                       ,best_node_to_join :: undefined | node()
+                       ,startup_lock_data = undefined
+                       }).
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Detailed node information neccessary for choosing the best cluster
+%% to join to.
+%% @end
+%%--------------------------------------------------------------------
+-record(augmented_node, {name :: node()
+                        ,uptime :: non_neg_integer()
+                        ,alive :: boolean()
+                        ,clustered_with :: [node()]
+                        ,alive_cluster_nodes :: [node()]
+                        ,partitioned_cluster_nodes :: [node()]
+                        ,other_cluster_nodes :: [node()]
+                        }).

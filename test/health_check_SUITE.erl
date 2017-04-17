@@ -13,44 +13,50 @@
 
 %% test cases
 -export([cluster_is_assembled/1
+        ,nodes_contiune_startup_with_ignore_failure_mode/1
+        ,startup_lock_released_after_startup_failure/1
         ]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Common test callbacks
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 all() ->
-    optional(has_etcd(), {group, etcd_group}).
+    autocluster_testing:optional(autocluster_testing:has_etcd(),
+                                 {group, etcd_group}).
 
 groups() ->
-    optional(has_etcd(), {etcd_group, [], [cluster_is_assembled
-                                          ]}).
+    autocluster_testing:optional(autocluster_testing:has_etcd(),
+                                 {etcd_group, [], [cluster_is_assembled,
+                                                   nodes_contiune_startup_with_ignore_failure_mode,
+                                                   startup_lock_released_after_startup_failure]}).
 
-init_per_suite(Config) ->
+init_per_suite(Config0) ->
     rabbit_ct_helpers:log_environment(),
-    rabbit_ct_helpers:run_setup_steps(Config).
+    rabbit_ct_helpers:run_setup_steps(Config0).
 
 end_per_suite(Config) ->
     rabbit_ct_helpers:run_teardown_steps(Config).
 
-init_per_testcase(cluster_is_assembled, Config0) ->
-    Config1 = [{rmq_nodes_count, 3}
-              ,{rmq_nodes_clustered, false}
-              ,{broker_with_plugins, true}
-               | Config0],
-    rabbit_ct_helpers:run_steps(Config1,
-                                [fun start_etcd/1
-                                ,fun generate_erlang_node_config/1
-                                ]
-                                ++ rabbit_ct_broker_helpers:setup_steps());
-
+init_per_testcase(cluster_is_assembled, Config) ->
+    start_3_node_cluster_with_etcd(Config, cluster_is_assembled);
+init_per_testcase(nodes_contiune_startup_with_ignore_failure_mode, Config) ->
+    os:putenv("ETCD_PORT", "1"),
+    os:putenv("AUTOCLUSTER_FAILURE", "ignore"),
+    start_3_node_cluster_with_etcd(Config, nodes_contiune_startup_with_ignore_failure_mode);
+init_per_testcase(startup_lock_released_after_startup_failure, Config) ->
+    os:putenv("AUTOCLUSTER_FAILURE", "ignore"),
+    start_3_node_cluster_with_etcd(Config, startup_lock_released_after_startup_failure);
 init_per_testcase(_, Config) ->
     Config.
 
 end_per_testcase(cluster_is_assembled, Config) ->
-    rabbit_ct_helpers:run_steps(Config,
-                                rabbit_ct_broker_helpers:teardown_steps()
-                                ++ [fun stop_etcd/1]);
-
+    stop_cluster_and_etcd(Config);
+end_per_testcase(nodes_contiune_startup_with_ignore_failure_mode, Config) ->
+    autocluster_testing:reset(), %% Cleanup os environment variables
+    stop_cluster_and_etcd(Config);
+end_per_testcase(startup_lock_released_after_startup_failure, Config) ->
+    autocluster_testing:reset(), %% Cleanup os environment variables
+    stop_cluster_and_etcd(Config);
 end_per_testcase(_, Config) ->
     Config.
 
@@ -59,75 +65,64 @@ end_per_testcase(_, Config) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 cluster_is_assembled(Config) ->
     ExpectedNodes = lists:sort(rabbit_ct_broker_helpers:get_node_configs(Config, nodename)),
-    case lists:sort(rabbit_ct_broker_helpers:rpc(Config, 1, rabbit_mnesia, cluster_nodes, [running])) of
-        ExpectedNodes ->
+    lists:foreach(fun (Node) ->
+                          case lists:sort(rabbit_ct_broker_helpers:rpc(Config, Node, rabbit_mnesia, cluster_nodes, [running])) of
+                              ExpectedNodes ->
+                                  ok;
+                              GotNodes ->
+                                  exit({nodes_from, Node, {got, GotNodes}, {expected, ExpectedNodes}})
+                          end
+                  end, ExpectedNodes),
+    ok.
+
+nodes_contiune_startup_with_ignore_failure_mode(Config) ->
+    assert_nodes_not_clustered(Config),
+    ok.
+
+%% `rabbit_mnesia:join_cluster/2` is broken, but `start_app` will
+%% succeed because of `ignore` failure mode. But we need to be
+%% sure that startup lock was relesead even when there was an
+%% error.
+startup_lock_released_after_startup_failure(Config) ->
+    AllNodes = rabbit_ct_broker_helpers:get_node_configs(Config, nodename),
+    lists:foreach(fun (Node) ->
+                          RPC = fun (M, F, A) ->
+                                        rabbit_ct_broker_helpers:rpc(Config, Node, M, F, A)
+                                end,
+                          Ctl = fun (Args) ->
+                                        {ok, _} = rabbit_ct_broker_helpers:rabbitmqctl(Config, Node, Args)
+                                end,
+                          Ctl(["stop_app"]),
+                          RPC(application, ensure_all_started, [meck]),
+                          RPC(rabbit_mnesia, reset, []),
+                          RPC(meck, new, [rabbit_mnesia, [passthrough, no_link]]),
+                          RPC(meck, expect, [rabbit_mnesia, join_cluster, [{['_', '_'], {error, borken_for_tests}}]]),
+                          Ctl(["start_app"])
+                  end,
+                  AllNodes),
+    assert_nodes_not_clustered(Config),
+
+    RPC = fun (M, F, A) ->
+                  rabbit_ct_broker_helpers:rpc(Config, 1, M, F, A)
+          end,
+    Path = RPC(autocluster_etcd, startup_lock_path, []),
+    case RPC(autocluster_etcd, etcd_get, [Path, []]) of
+        {error, "404"} ->
             ok;
-        GotNodes ->
-            ct:pal(error, "Nodes in cluster are ~p when ~p was expected", [GotNodes, ExpectedNodes])
+        Res ->
+            exit({startup_lock_is_still_here, Res})
     end,
     ok.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Helpers
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-has_etcd() ->
-    case os:getenv("USE_ETCD") of
-        false ->
-            false;
-        _ ->
-            true
-    end.
-
-find_etcd_executable(_Config) ->
-    os:getenv("USE_ETCD").
-
-%% XXX Think about implementing etcd stub. But given that etcd is just
-%% a statically linked easily downloadable binary, it may be not worth
-%% it.
-start_etcd(Config) ->
-    Exe = find_etcd_executable(Config),
-    Dir = filename:join(?config(priv_dir, Config), "etcd.data"),
-    ok = file:make_dir(Dir),
-    {ok, Port} = exec_background([Exe, "--data-dir", Dir]),
-    [{etcd_erlang_port, Port},
-     {etcd_port, 2379}
-     |Config].
-
-stop_etcd(Config) ->
-    Port = ?config(etcd_erlang_port, Config),
-    {os_pid, OsPid} = erlang:port_info(Port, os_pid),
-    os:cmd(io_lib:format("kill -9 ~p", [OsPid])),
-    Config.
-
-%% XXX Do something of a sort in rabbit_ct_helpers.
-exec_background([Cmd|Args]) ->
-    PortOptions = [use_stdio, stderr_to_stdout],
-    Port = erlang:open_port({spawn_executable, Cmd},
-                            [{args, Args}, exit_status | PortOptions]),
-    ct:pal(?LOW_IMPORTANCE, "Started port ~p for command ~p", [Port, [Cmd|Args]]),
-    spawn_link(fun() -> background_port_loop(Port) end),
-    {ok, Port}.
-
-background_port_loop(Port) ->
-    receive
-        {Port, {exit_status, X}} ->
-            ct:pal(?LOW_IMPORTANCE, "Port ~p exited with ~b", [Port, X]);
-        {Port, {data, Data}} ->
-            ct:pal(?LOW_IMPORTANCE, "Port ~p data: ~s~n", [Port, Data]),
-            background_port_loop(Port)
-    end.
-
--spec optional(boolean(), Val) -> [Val] when Val :: term().
-optional(true, Value) ->
-    [Value];
-optional(false, _) ->
-    [].
-
 generate_erlang_node_config(Config) ->
     ErlangNodeConfig = [{rabbit, [{dummy_param_for_comma, true}
                                  ,{cluster_partition_handling, ignore}
                                  ]},
                         {autocluster, [{dummy_param_for_comma, true}
+                                      ,{autocluster_log_level, debug}
                                       ,{backend, etcd}
                                       ,{autocluster_failure, stop}
                                       ,{cleanup_interval, 10}
@@ -135,6 +130,37 @@ generate_erlang_node_config(Config) ->
                                       ,{cleanup_warn_only, false}
                                       ,{etcd_scheme, http}
                                       ,{etcd_host, "localhost"}
-                                      ,{etcd_port, ?config(etcd_port, Config)}
+                                      ,{etcd_port, ?config(etcd_port_num, Config)}
                                       ]}],
     rabbit_ct_helpers:merge_app_env(Config, ErlangNodeConfig).
+
+
+start_3_node_cluster_with_etcd(Config0, TestCase) ->
+    NodeNames = [ atom_to_list(TestCase) ++ "-" ++ integer_to_list(N) || N <- lists:seq(1, 3)],
+    {ok, Process, PortNumber} = autocluster_testing:start_etcd(?config(priv_dir, Config0)),
+    Config1 = [{rmq_nodes_count, NodeNames}
+              ,{rmq_nodes_clustered, false}
+              ,{broker_with_plugins, true}
+              ,{etcd_process, Process}
+              ,{etcd_port_num, PortNumber}
+               | Config0],
+    rabbit_ct_helpers:run_steps(Config1,
+                                [fun generate_erlang_node_config/1]
+                                ++ rabbit_ct_broker_helpers:setup_steps()).
+
+stop_cluster_and_etcd(Config) ->
+    autocluster_testing:stop_etcd(?config(etcd_process, Config)),
+    rabbit_ct_helpers:run_steps(Config,
+                                rabbit_ct_broker_helpers:teardown_steps()).
+
+assert_nodes_not_clustered(Config) ->
+    AllNodes = rabbit_ct_broker_helpers:get_node_configs(Config, nodename),
+    lists:foreach(fun (Node) ->
+                          case rabbit_ct_broker_helpers:rpc(Config, Node, rabbit_mnesia, cluster_nodes, [running]) of
+                              [Node] ->
+                                  ok;
+                              Smth ->
+                                  exit({strange_report, Node, Smth})
+                          end
+                  end, AllNodes),
+    ok.

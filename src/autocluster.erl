@@ -1,16 +1,50 @@
 %%==============================================================================
 %% @author Gavin M. Roy <gavinr@aweber.com>
 %% @copyright 2015-2016 AWeber Communications
+%% @doc
+%% Startup happens in 3 stages:
+%% 1) Acquiring startup lock, choosing best node to cluster with (if
+%%    any) and doing clustering.
+%% 2) Register broker in backend after it's ready to serve client
+%%    requests.
+%% 3) Release startup lock. So this stage can run independently even
+%%    if previous phase failed somewhere in the middle. It matters
+%%    when we are running in `ignore` failure mode, as we don't want
+%%    to hold the lock for infinite amount of time.
 %% @end
 %%==============================================================================
 -module(autocluster).
 
--export([init/0]).
+%% Rabbit startup entry point
+-export([boot_step_discover_and_join/0,
+         boot_step_register/0,
+         boot_step_release_lock/0]).
 
--rabbit_boot_step({?MODULE,
-                   [{description, <<"Automated cluster configuration">>},
-                    {mfa,         {autocluster, init, []}},
+-rabbit_boot_step({autocluster_discover_and_join,
+                   [{description, <<"Automated cluster configuration - lock, discover and join">>},
+                    {mfa,         {autocluster, boot_step_discover_and_join, []}},
                     {enables,     pre_boot}]}).
+
+-rabbit_boot_step({autocluster_register,
+                   [{description, <<"Automated cluster configuration - register">>},
+                    {mfa,         {autocluster, boot_step_register, []}},
+                    {requires,    notify_cluster}]}).
+
+-rabbit_boot_step({autocluster_unlock,
+                   [{description, <<"Automated cluster configuration - release lock">>},
+                    {mfa,        {autocluster, boot_step_release_lock, []}},
+                    {requires,   autocluster_register}]}).
+
+%% Boot sequence steps - exported for better diagnostics, so we can
+%% get current step name using erlang:fun_info/2
+-export([initialize_backend/1,
+         acquire_startup_lock/1,
+         find_best_node_to_join/1,
+         maybe_cluster/1,
+         register_in_backend/1,
+         release_startup_lock/1]).
+
+-include("autocluster.hrl").
 
 %% Export all for unit tests
 -ifdef(TEST).
@@ -19,345 +53,289 @@
 
 %%--------------------------------------------------------------------
 %% @doc
-%% Register the node with Consul and then check to see if there are
-%% other nodes available that this node can cluster with. If so, stop
-%% the rabbit and mnesia applications, reset the mnesia database, join
-%% the cluster, and then start the mnesia and rabbit applications back
-%% up again.
+%% Scrapes backend for list of nodes to possibly cluster to, chooses
+%% the best one (if any at all) and tries to join to that node.
+%% Startup sequence is protected against races by backend locking
+%% mechanism (or by random delay for backend without lock support).
 %% @end
 %%--------------------------------------------------------------------
--spec init() -> ok | error.
-init() ->
-  ensure_logging_configured(),
-  {ok, _} = application:ensure_all_started(inets),
-  case node_is_registered() of
-    error ->
-      startup_failure();
-    Registered ->
-      cluster_node(Registered)
+-spec boot_step_discover_and_join() -> ok.
+boot_step_discover_and_join() ->
+    ensure_logging_configured(),
+    autocluster_log:info("Running discover/join stage"),
+    start_dependee_applications(),
+    Steps = [fun autocluster:initialize_backend/1,
+             fun autocluster:acquire_startup_lock/1,
+             fun autocluster:find_best_node_to_join/1,
+             fun autocluster:maybe_cluster/1],
+    State = new_startup_state(),
+    with_stopped_app(fun() -> run_steps(Steps, State) end),
+    ok.
+
+%%--------------------------------------------------------------------
+%% @doc
+%% We are ready to serve client requests, so it's a good time to
+%% register ourselves in the backend.
+%%
+%% XXX What is proper behaviour when we failed to join to the cluster,
+%% but failure mode is `ignore`? Currently it tries to register this
+%% node even in a case of an error, but maybe we should skip
+%% registration step instead?
+%%
+%% @end
+%%--------------------------------------------------------------------
+boot_step_register() ->
+    autocluster_log:info("Running register stage"),
+    run_steps([fun autocluster:register_in_backend/1]).
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Startup sequence finished, let other starting nodes to proceed.
+%% @end
+%%--------------------------------------------------------------------
+boot_step_release_lock() ->
+    autocluster_log:info("Running unlock stage"),
+    run_steps([fun autocluster:release_startup_lock/1]).
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Run initializations steps in order.
+%% - When step succeeds, it returns updated state that is passed to
+%%   subsequent steps.
+%% - When step fails, error is logged and processing stops. Depending
+%%   on failure mode run_steps/1 can return `ok` or do `exit({error,
+%%   Reason})`. Returing and throwing `{error, Reason}` are both
+%%   the same, as rabbit boot steps will convert error return to exit.
+%%   So we can throw ourselves to avoid explicit error handling.
+%%
+%% Initial and final states are implicit and managed by
+%% set_run_steps_state/1. This way we can split startup sequence into
+%% different stages that share some common state.
+%% @end
+%%--------------------------------------------------------------------
+-spec run_steps([StepFun]) -> ok when
+      StepFun :: fun((#startup_state{}) -> {ok, #startup_state{}} | {error, string()}).
+run_steps([]) ->
+    ok;
+run_steps([Step|Rest]) ->
+    {_, StepName} = erlang:fun_info(Step, name),
+    autocluster_log:info("Running step ~p", [StepName]),
+    State = get_run_steps_state(),
+    StopOnError = failure_mode() =:= stop,
+    case Step(State) of
+        {error, Reason} when StopOnError =:= false ->
+            autocluster_log:error("Failed on step ~s, but will start nevertheless. Reason was: ~s.",
+                                  [StepName, Reason]),
+            ok;
+        {error, Reason} when StopOnError =:= true ->
+            autocluster_log:error("Failed on step ~s, cancelling startup. Reason was: ~s.",
+                                  [StepName, Reason]),
+            exit({error, Reason});
+        {ok, NewState} ->
+            set_run_steps_state(NewState),
+            run_steps(Rest)
+    end.
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Shortcut for run_steps/1 with explicitly passed state.
+%% @end
+%%--------------------------------------------------------------------
+run_steps(Steps, InitialState) ->
+    set_run_steps_state(InitialState),
+    run_steps(Steps).
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Stores some state for later reuse by run_steps/1.
+%% @end
+%%--------------------------------------------------------------------
+set_run_steps_state(State) ->
+    application:set_env(autocluster, startup_steps_state, State).
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Retrieves state stored by set_run_steps_state/1.
+%% @end
+%%--------------------------------------------------------------------
+get_run_steps_state() ->
+    {ok, State} = application:get_env(autocluster, startup_steps_state),
+    State.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Boot steps
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Step 1: Check whether valid backend is choosen and pass information
+%% about it to next steps.
+%% @end
+%%--------------------------------------------------------------------
+-spec initialize_backend(#startup_state{}) -> {ok, #startup_state{}} | {error, iolist()}.
+initialize_backend(State) ->
+  case detect_backend(autocluster_config:get(backend)) of
+    {ok, Name, Mod} ->
+      {ok, State#startup_state{backend_name = Name, backend_module = Mod}};
+    {ok, Name, Mod, RequiredApps} ->
+      autocluster_log:info("Starting backend ~s dependencies: ~p", [Name, RequiredApps]),
+      _ = [ application:ensure_all_started(App) || App <- RequiredApps],
+      {ok, State#startup_state{backend_name = Name, backend_module = Mod}};
+    {error, Error} ->
+      {error, Error}
   end.
 
-%% Clustering Logic
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Step 2: Acquire startup lock in backend to prevent startup
+%% races. If backend doesn't implement locking, fall back to random
+%% startup delay.
+%% @end
+%%--------------------------------------------------------------------
+-spec acquire_startup_lock(#startup_state{}) -> {ok, #startup_state{}} | {error, string()}.
+acquire_startup_lock(State) ->
+    case backend_lock(State) of
+        {ok, LockData} ->
+            autocluster_log:info("Startup lock acquired", []),
+            {ok, State#startup_state{startup_lock_data = LockData}};
+        ok ->
+            autocluster_log:info("Startup lock acquired", []),
+            {ok, State};
+        not_supported ->
+            maybe_delay_startup(),
+            {ok, State};
+        {error, Reason} ->
+            {error, lists:flatten(io_lib:format("Failed to acquire startup lock: ~s", [Reason]))}
+    end.
 
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
-%% Step 1: get the backend type from config and pass it to step two.
+%% Step 3: Fetch list of existing nodes from backend, gather
+%% additional information about that nodes (liveness, uptime, cluster
+%% size). Choose best node: live node that is clustered with biggest
+%% amount of other live nodes, with highest uptime. Inability to find
+%% a live node to join to is not an error, it just means that no
+%% clustering is needed.
 %% @end
 %%--------------------------------------------------------------------
--spec node_is_registered() -> ok | error.
-node_is_registered() ->
-  ensure_registered(autocluster_config:get(backend)).
-
+-spec find_best_node_to_join(#startup_state{}) -> {ok, #startup_state{}} | {error, string()}.
+find_best_node_to_join(State) ->
+    case backend_nodelist(State) of
+        {ok, Nodes} ->
+            autocluster_log:info("List of nodes from backend: ~p", [Nodes]),
+            BestNode = choose_best_node(autocluster_util:augment_nodelist(Nodes)),
+            autocluster_log:info("Best discovery node choice: ~p", [BestNode]),
+            {ok, State#startup_state{best_node_to_join = BestNode}};
+        {error, Reason} ->
+            {error, lists:flatten(io_lib:format("Failed to fetch nodelist from backend: ~w", [Reason]))}
+    end.
 
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
-%% Step 2: get the module for the backend type and pass it to step three.
+%% Step 4: Joins current node to a rabbit cluster - if we have a node
+%% to join to and aren't part of that cluster already. Or do nothing
+%% otherwise.
+%%
+%% There are 3 possible situations here (that roughly correspond to
+%% nested `case` statements in rabbit_mnesia:join_cluster/2):
+%%
+%% 1) Discovery node thinks that we are not clustered with
+%%    it. rabbit_mnesia:join_cluster/2 resets mnesia on current node
+%%    and joins it to the cluster.
+%%
+%% 2) Discovery node thinks that we are clustered with it, and we also
+%%    think so. We continue startup as usual, but startup may fail if
+%%    databases have diverged. Resetting mnesia will not help in this
+%%    case, because discovery node will not forget about us during
+%%    reset. But when automatic or manual cleanup will finally kick
+%%    out this node from the rest of the cluster, this will be handled
+%%    as the first situation (during next startup attempt).
+%%
+%% 3) Discovery node thinks that we are clustered with it, but we
+%%    don't (reset has somehow happened).  Resetting mnesia will not
+%%    make things better, we can only wait for cleanup; and then it
+%%    also becomes the first situtation.
+%%
+%% This is the reasoning behind why autocluster shouldn't perform
+%% explicit mnesia reset.
+%%
 %% @end
 %%--------------------------------------------------------------------
--spec ensure_registered(atom()) -> ok | error.
-ensure_registered(aws) ->
-  autocluster_log:debug("Using AWS backend"),
-  ensure_registered(aws, autocluster_aws, [rabbitmq_aws]);
-
-ensure_registered(consul) ->
-  autocluster_log:debug("Using consul backend"),
-  ensure_registered(consul, autocluster_consul);
-
-ensure_registered(dns) ->
-  autocluster_log:debug("Using DNS backend"),
-  ensure_registered(dns, autocluster_dns);
-
-ensure_registered(etcd) ->
-  autocluster_log:debug("Using etcd backend"),
-  ensure_registered(etcd, autocluster_etcd);
-
-ensure_registered(k8s) ->
-  autocluster_log:debug("Using k8s backend"),
-  ensure_registered(k8s, autocluster_k8s);
-
-ensure_registered(unconfigured) ->
-  autocluster_log:error("Backend is not configured"),
-  error;
-
-ensure_registered(Backend) ->
-  autocluster_log:error("Unsupported backend: ~s.", [Backend]),
-  error.
+-spec maybe_cluster(#startup_state{}) -> {ok, #startup_state{}} | {error, string()}.
+maybe_cluster(#startup_state{best_node_to_join = undefined} = State) ->
+    autocluster_log:info("We are the first node in the cluster, starting up unconditionally."),
+    {ok, State};
+maybe_cluster(#startup_state{best_node_to_join = DNode} = State) ->
+    Result =
+        case ensure_clustered_with(DNode) of
+            ok ->
+                {ok, State};
+            {error, Reason} ->
+                {error, io_lib:format("Failed to cluster with ~s: ~s", [DNode, Reason])}
+        end,
+    Result.
 
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
-%% Step 3: get the list of nodes from the service discovery backend
-%% and pass them to step four to possibly register the node with the
-%% backend.
+%% Step 5: Registers node in a choosen backend. For backends that
+%% require some health checker/TTL updater, it also starts those processes.
 %% @end
 %%--------------------------------------------------------------------
--spec ensure_registered(Name :: atom(), Module :: module())
-    -> ok | error.
-ensure_registered(Name, Module) ->
-  ensure_registered(Name, Module, []).
-
--spec ensure_registered(Name :: atom(), Module :: atom(), Apps :: [atom()])
-    -> ok | error.
-ensure_registered(Name, Module, Apps) ->
-  _ = [ application:ensure_all_started(App) || App <- Apps ],
-  maybe_delay_startup(),
-  autocluster_log:info("Starting ~p registration.", [Name]),
-  Nodes = Module:nodelist(),
-  maybe_register(Nodes, Name, Module).
-
+-spec register_in_backend(#startup_state{}) -> {ok, #startup_state{}} | {error, iolist()}.
+register_in_backend(State) ->
+    case backend_register(State) of
+        ok ->
+            {ok, State};
+        {error, Reason} ->
+            {error, io_lib:format("Failed to register in backend: ~s", [Reason])}
+    end.
 
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
-%% Step 4: evaluate the node list to determine if the node should be
-%% registered, passing the info off to step five if so.
+%% Step 6: Tries to release startup lock. Failure to release lock
+%% means that we somehow lost it, and it can mean that we can be
+%% affected by startup races.
 %% @end
 %%--------------------------------------------------------------------
--spec maybe_register({ok, [node()]} | error,
-  Name :: atom(),
-  Module :: module()) -> ok | error.
-maybe_register({ok, Nodes}, Name, Module) ->
-  maybe_register_non_member_node(lists:member(node(), Nodes),
-                                 Name, Module, Nodes);
-maybe_register({error, Reason}, _, Module) ->
-  autocluster_log:error("Could not fetch node list from ~p: ~p.",
-                        [Module, Reason]),
-  error.
-
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Step 5: If the node is already registered, move on to the next
-%% phase, if not, register it with the backend passing the response
-%% to step six.
-%% @end
-%%--------------------------------------------------------------------
--spec maybe_register_non_member_node(true | false,
-  Name :: atom(),
-  Module :: module(),
-  Nodes :: [node()]) -> ok | error.
-maybe_register_non_member_node(true, _, _, Nodes) ->
-  {ok, Nodes};
-maybe_register_non_member_node(false, Name, Module, Nodes) ->
-  autocluster_log:info("Registering node with ~p.", [Name]),
-  process_registration_result(Module:register(), Name, Nodes).
-
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Step 6: Evaluate the response returning ok or error.
-%% @end
-%%--------------------------------------------------------------------
--spec process_registration_result(ok | error,
-                                  Name :: atom(),
-                                  Nodes :: [node()])
-    -> ok | error.
-process_registration_result(ok, Name, Nodes) ->
-  autocluster_log:debug("Registered node with ~p.", [Name]),
-  {ok, Nodes};
-process_registration_result({error, Reason}, Name, _) ->
-  autocluster_log:error("Error registering node with ~p: ~p.",
-                        [Name, Reason]),
-  error.
-
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Phase Two (Step 7): If nodes are returned from service discovery
-%% check to ensure that the node is part of the RabbitMQ cluster with
-%% them. If it isn't join the cluster. If the service discovery
-%% registration check failed, return an error.
-%% @end
-%%--------------------------------------------------------------------
--spec cluster_node({ok, [node()]} | error) -> ok | error.
-cluster_node({ok, Nodes}) ->
-  autocluster_log:debug("Discovered ~p", [Nodes]),
-  ensure_clustered(Nodes).
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Step 8: Remove the node from the node list from the service
-%% discovery backend. Get the list of nodes that this node already
-%% knows about and potentially join the node to the cluster.
-%% @end
-%%--------------------------------------------------------------------
--spec ensure_clustered([node()]) -> ok|error.
-ensure_clustered(Nodes) ->
-  Others = sets:del_element(node(), sets:from_list(Nodes)),
-  maybe_join_cluster_nodes(rabbit_mnesia:cluster_nodes(all), Others, sets:size(Others)).
-
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Step 9: Evaluate the nodes in the RabbitMQ cluster and returned
-%% from the discovery service and determine if the node should join
-%% the cluster.
-%% @end
-%%--------------------------------------------------------------------
--spec maybe_join_cluster_nodes(RNodes :: [node()], DNodes :: sets:set(node()), DNodesCount :: non_neg_integer())
-    -> ok | error.
-maybe_join_cluster_nodes(_, _, 0) ->
-  autocluster_log:debug("Node appears to be the first in the cluster."),
-  ok;
-maybe_join_cluster_nodes(Nodes, DNodes, _) when length(Nodes) == 1 ->
-  maybe_join_discovery_nodes(sets:to_list(DNodes));
-maybe_join_cluster_nodes(Nodes, _, _) ->
-  maybe_join_existing_cluster(lists:member(node(), Nodes), Nodes).
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Step 10: If there are discovery nodes to cluster with, have the
-%% node join the cluster.
-%% @end
-%%--------------------------------------------------------------------
--spec maybe_join_discovery_nodes([node()]) -> ok | error.
-maybe_join_discovery_nodes([]) ->
-  autocluster_log:debug("No other nodes are registed with the backend."),
-  ok;
-
-maybe_join_discovery_nodes(Nodes) ->
-  join_cluster(Nodes).
-
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Step 11: Evaluate the check to see if the node is already in the
-%% cluster info returned by RabbitMQ and if not, join the cluster.
-%% @end
-%%--------------------------------------------------------------------
--spec maybe_join_existing_cluster(true | false, [node()])
-    -> ok | error.
-maybe_join_existing_cluster(true, _) ->
-  autocluster_log:debug("Node is already in the cluster"),
-  ok;
-
-maybe_join_existing_cluster(false, Nodes) ->
-  join_cluster(Nodes).
-
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Step 12: Filter any nodes that this node can not communicate with
-%% and pass the list on to Step 13.
-%% @end
-%%--------------------------------------------------------------------
--spec join_cluster([node()]) -> ok | error.
-join_cluster(Nodes) ->
-  join_cluster_nodes(filter_dead_nodes(Nodes)).
-
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Step 13: Join the node to the existing nodes in the cluster unless
-%% there are no nodes that it could not communicate with.
-%% @end
-%%--------------------------------------------------------------------
--spec join_cluster_nodes([node()]) -> ok | error.
-join_cluster_nodes([]) ->
-  autocluster_log:warning("Can not communicate with cluster nodes."),
-  startup_failure();
-
-join_cluster_nodes(Nodes) ->
-  autocluster_log:debug("Joining the cluster."),
-  _ = application:stop(rabbit),
-  _ = mnesia:stop(),
-  rabbit_mnesia:reset(),
-  process_join_result(
-    rabbit_mnesia:join_cluster(lists:nth(1, Nodes),
-                               autocluster_config:get(node_type))).
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Step 14: Check the result of joining to the cluster.
-%% @end
-%%--------------------------------------------------------------------
--spec process_join_result(RabbitJoinResult) -> ok | error when
-      RabbitJoinResult :: ok | {ok, already_member} | {error, term()}.
-process_join_result({ok, already_member}) ->
-  %% Before https://github.com/rabbitmq/rabbitmq-server/pull/868 it
-  %% should be considered an error, but I'm not sure.
-  autocluster_log:debug("Was already joined."),
-  maybe_start(ok);
-process_join_result(ok) ->
-  autocluster_log:debug("Cluster joined."),
-  maybe_start(ok);
-process_join_result({error, Reason}) ->
-  autocluster_log:warning("Failed to join to cluster: ~p", [Reason]),
-  maybe_start(startup_failure()).
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Step 15: Start rabbit back after join - but only if join result and
-%% failure mode allows us to do it.
-%% @end
-%%--------------------------------------------------------------------
--spec maybe_start(ok | error) -> ok | error.
-maybe_start(ok) ->
-  ok = mnesia:start(),
-  rabbit:start(),
-  ok;
-maybe_start(error) ->
-  autocluster_log:warning("Failure mode forbids startup", []),
-  error.
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Filter the list of nodes specified by the backend and ensure that
-%% this node can communicate with them.
-%% @end
-%%--------------------------------------------------------------------
--spec filter_dead_nodes([node()]) -> list().
-filter_dead_nodes(Nodes) ->
-  lists:filter(fun(N) -> net_adm:ping(N) =:= pong end, Nodes).
-
+-spec release_startup_lock(#startup_state{}) -> {ok, #startup_state{}} | {error, iolist()}.
+release_startup_lock(State) ->
+    case backend_unlock(State) of
+        ok ->
+            {ok, State};
+        {error, Reason} ->
+            {error, io_lib:format("Failed to release startup lock: ~s", [Reason])}
+    end.
 
 %% Startup Failure Methods
 
-
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
-%% Lookup the configuration value for autocluster failures, returning
-%% the appropriate value to have the application startup pass or fail.
+%% Returns currently configured failure mode. Unknown configuration
+%% values are transformed into `ignore`.
 %% @end
 %%--------------------------------------------------------------------
--spec startup_failure() -> ok | error.
-startup_failure() ->
-  startup_failure_result(autocluster_config:get(autocluster_failure)).
-
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Evaluate the configuration value for autocluster failures and
-%% return the appropriate value to have the application startup pass
-%% or fail.
-%% @end
-%%--------------------------------------------------------------------
--spec startup_failure_result(atom()) -> ok | error.
-startup_failure_result(stop) -> error;
-startup_failure_result(ignore) -> ok;
-startup_failure_result(Value) ->
-  autocluster_log:error("Invalid startup failure setting: ~p~n", [Value]),
-  ok.
-
+-spec failure_mode() -> stop | ignore.
+failure_mode() ->
+    case autocluster_config:get(autocluster_failure) of
+        stop -> stop;
+        ignore -> ignore;
+        BadMode ->
+            autocluster_log:error("Invalid startup failure setting: ~p~n", [BadMode]),
+            ignore
+    end.
 
 %% Startup Delay Methods
-
 
 %%--------------------------------------------------------------------
 %% @private
@@ -386,8 +364,31 @@ startup_delay(Max) ->
   timer:sleep(Duration).
 
 
-%% Misc Method(s)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Backend helpers - forward requests to backend module mentioned in
+%% #startup_state{}.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+-spec backend_register(#startup_state{}) -> ok | {error, iolist()}.
+backend_register(#startup_state{backend_module = Mod}) ->
+    Mod:register().
+
+-spec backend_unlock(#startup_state{}) -> ok | {error, iolist()}.
+backend_unlock(#startup_state{backend_module = Mod, startup_lock_data = Data}) ->
+    Mod:unlock(Data).
+
+-spec backend_lock(#startup_state{}) -> ok | {ok, LockData :: term()} | not_supported | {error, iolist()}.
+backend_lock(#startup_state{backend_module = Module}) ->
+    Module:lock(atom_to_list(node())).
+
+-spec backend_nodelist(#startup_state{}) -> {ok, [node()]} | {error, iolist()}.
+backend_nodelist(#startup_state{backend_module = Module}) ->
+    Module:nodelist().
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Misc Method(s)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%--------------------------------------------------------------------
 %% @private
@@ -400,3 +401,151 @@ startup_delay(Max) ->
 ensure_logging_configured() ->
   Level = autocluster_config:get(autocluster_log_level),
   autocluster_log:set_level(Level).
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Start all OTP applications that can be required by backend modules.
+%% @end
+%%--------------------------------------------------------------------
+-spec start_dependee_applications() -> ok.
+start_dependee_applications() ->
+    %% XXX Not all backends need this
+    {ok, _} = application:ensure_all_started(inets),
+    ok.
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc Currently chooses first alive node from a list sorted by node name.
+%% XXX Take into account other considerations: uptime, size of the
+%% cluster and so on.
+%% @end
+%%--------------------------------------------------------------------
+-spec choose_best_node([#augmented_node{}]) -> node() | undefined.
+choose_best_node([_|_] = NonEmptyNodeList) ->
+    Sorted = lists:sort(fun(#augmented_node{name = A}, #augmented_node{name = B}) ->
+                                A < B
+                        end,
+                        NonEmptyNodeList),
+    WithoutSelfAndDead = lists:filter(fun (#augmented_node{name = Node}) when Node =:= node() -> false;
+                                          (#augmented_node{alive = false}) -> false;
+                                          (_) -> true
+                                      end, Sorted),
+    case WithoutSelfAndDead of
+        [BestNode|_] ->
+            BestNode#augmented_node.name;
+        _ ->
+            undefined
+    end;
+choose_best_node(_) ->
+    undefined.
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Converts backend specified in configuration into its proper
+%% internal name and module name.
+%% @end
+%%--------------------------------------------------------------------
+-spec detect_backend(atom()) -> Backend | BackendWithDeps | {error, iolist()} when
+    Backend :: {ok, atom(), module()},
+    BackendWithDeps :: {ok, atom(), module(), [atom()]}.
+detect_backend(aws) ->
+  autocluster_log:debug("Using AWS backend"),
+  {ok, aws, autocluster_aws, [rabbitmq_aws]};
+
+detect_backend(consul) ->
+  autocluster_log:debug("Using consul backend"),
+  {ok, consul, autocluster_consul};
+
+detect_backend(dns) ->
+  autocluster_log:debug("Using DNS backend"),
+  {ok, dns, autocluster_dns};
+
+detect_backend(etcd) ->
+  autocluster_log:debug("Using etcd backend"),
+  {ok, etcd, autocluster_etcd};
+
+detect_backend(k8s) ->
+  autocluster_log:debug("Using k8s backend"),
+  {ok, k8s, autocluster_k8s};
+
+detect_backend(unconfigured) ->
+  {error, "Backend is not configured"};
+
+detect_backend(Backend) ->
+  {error, io_lib:format("Unsupported backend: ~s.", [Backend])}.
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Tries to join current node to given node (unless we are already
+%% clustered with that discovery node). rabbit_mnesia:join_cluster/2
+%% is idempotent in recent rabbitmq releases, and contains some clever
+%% checks. So we are just going to call it unconditionally.
+%%
+%% @end
+%%--------------------------------------------------------------------
+-spec ensure_clustered_with(node()) -> ok | {error, iolist()}.
+ensure_clustered_with(Target) ->
+    case rabbit_mnesia:join_cluster(Target, autocluster_config:get(node_type)) of
+        ok ->
+            ok;
+        {ok, already_member} ->
+            ok;
+        {error, Reason} ->
+            {error, lists:flatten(io_lib:format("~w", [Reason]))}
+    end.
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Stops 'rabbit' and 'mnesia' applications.
+%% @end
+%%--------------------------------------------------------------------
+-spec ensure_app_stopped() -> ok.
+ensure_app_stopped() ->
+    _ = application:stop(rabbit), %% rabbit:stop/0 will hang at that point
+    _ = mnesia:stop(),
+    autocluster_log:info("Apps 'rabbit' and 'mnesia' successfully stopped"),
+    ok.
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Starts 'rabbit' and 'mnesia' applications.
+%% @end
+%%--------------------------------------------------------------------
+-spec ensure_app_running() -> ok.
+ensure_app_running() ->
+    ok = mnesia:start(),
+    rabbit:start(),
+    autocluster_log:info("Starting back 'rabbit' application"),
+    ok.
+
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Returns new empty startup state.
+%% @end
+%%--------------------------------------------------------------------
+-spec new_startup_state() -> #startup_state{}.
+new_startup_state() ->
+    #startup_state{backend_name = unconfigured
+                  ,backend_module = unconfigured
+                  ,best_node_to_join = undefined
+                  ,startup_lock_data = undefined
+                  }.
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Runs given function with stopped rabit/mnesia apps. Starts them
+%% back after the function returns.
+%% @end
+%%--------------------------------------------------------------------
+with_stopped_app(Fun) ->
+    ensure_app_stopped(),
+    Fun(),
+    ensure_app_running().
