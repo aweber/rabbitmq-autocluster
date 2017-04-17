@@ -1,4 +1,5 @@
 PROJECT = autocluster
+VERSION ?= 0.0.0
 
 DEPS = rabbit_common rabbitmq_aws
 
@@ -21,6 +22,7 @@ current_rmq_ref = stable
 
 include rabbitmq-components.mk
 include erlang.mk
+include plugin-packaging.mk
 
 # --------------------------------------------------------------------
 # Testing.
