@@ -73,10 +73,10 @@ make_request() ->
 %%    see http://kubernetes.io/docs/api-reference/v1/definitions/#_v1_endpoints
 %% @end
 %%
-extract_node_list({struct, Response}) ->
+extract_node_list(Response) ->
     IpLists = [[proplists:get_value(<<"ip">>, Address)
-		|| {struct, Address} <- proplists:get_value(<<"addresses">>, Subset)]
-	       || {struct, Subset} <- proplists:get_value(<<"subsets">>, Response)],
+		||  Address <- proplists:get_value(<<"addresses">>, Subset)]
+	       || Subset <- proplists:get_value(<<"subsets">>, Response)],
     sets:to_list(sets:union(lists:map(fun sets:from_list/1, IpLists))).
 
 
