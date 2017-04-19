@@ -115,7 +115,7 @@ base_path() ->
     "undefined" -> "default";
     Value -> Value
   end,
-  [v2, keys, autocluster_config:get(etcd_prefix), Cluster].
+  lists:append([[v2, keys], string:tokens(autocluster_config:get(etcd_prefix), "/"), [Cluster]]).
 
 
 %% @spec extract_nodes(list(), list()) -> list()
@@ -149,7 +149,8 @@ extract_nodes(Miss) ->
 %%
 get_node_from_key(<<"/", V/binary>>) -> get_node_from_key(V);
 get_node_from_key(V) ->
-  Path = string:concat(autocluster_httpc:build_path(lists:sublist(base_path(), 3, 2)), "/"),
+  BasePath = base_path(),
+  Path = string:concat(autocluster_httpc:build_path(lists:sublist(BasePath, 3, length(BasePath) - 2)), "/"),
   autocluster_util:node_name(string:substr(binary_to_list(V), length(Path))).
 
 
