@@ -189,22 +189,30 @@ get_priv_dns_by_tags(Tags) ->
   get_priv_dns_names(Path).
 
 
-get_priv_dns_name_from_reservation_set([], Accum) -> Accum;
-get_priv_dns_name_from_reservation_set([{"item", RI}|T], Accum) ->
-  InstancesSet = proplists:get_value("instancesSet", RI),
-  Item = proplists:get_value("item", InstancesSet),
-  DNSName = proplists:get_value("privateDnsName", Item),
+get_priv_dns_name_from_instances_set([], Accum) -> Accum;
+get_priv_dns_name_from_instances_set([{"item", SI}|T], Accum) ->
+  DNSName = proplists:get_value("privateDnsName", SI),
   if
-    DNSName == [] -> get_priv_dns_name_from_reservation_set(T, Accum);
-    true -> get_priv_dns_name_from_reservation_set(T, lists:append([DNSName], Accum))
+    DNSName == [] -> get_priv_dns_name_from_instances_set(T, Accum);
+    true -> get_priv_dns_name_from_instances_set(T, lists:append([DNSName], Accum))
   end.
+
+get_priv_dns_names_from_reservation_set([], Accum) -> Accum;
+get_priv_dns_names_from_reservation_set([{"item", RI}|T], Accum) ->
+  InstancesSet = proplists:get_value("instancesSet", RI),
+  DNSNames = get_priv_dns_name_from_instances_set(InstancesSet, []),
+  if
+    DNSNames == [] -> get_priv_dns_names_from_reservation_set(T, Accum);
+    true -> get_priv_dns_names_from_reservation_set(T, lists:append(DNSNames, Accum))
+  end.  
+  
 
 get_priv_dns_names(Path) ->
   case api_get_request("ec2", Path) of
     {ok, Payload} ->
       Response = proplists:get_value("DescribeInstancesResponse", Payload),
       ReservationSet = proplists:get_value("reservationSet", Response),
-      get_priv_dns_name_from_reservation_set(ReservationSet, []);
+      get_priv_dns_names_from_reservation_set(ReservationSet, []);
     {error, Reason} ->
       autocluster_log:error("Error fetching node list: ~p", [Reason]),
       error
