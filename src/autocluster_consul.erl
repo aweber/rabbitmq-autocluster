@@ -85,7 +85,7 @@ nodelist() ->
 register() ->
   case registration_body() of
     {ok, Body} ->
-      case autocluster_httpc:post(autocluster_config:get(consul_scheme),
+      case autocluster_httpc:put(autocluster_config:get(consul_scheme),
                                   autocluster_config:get(consul_host),
                                   autocluster_config:get(consul_port),
                                   [v1, agent, service, register],
@@ -105,11 +105,11 @@ register() ->
 -spec send_health_check_pass() -> ok.
 send_health_check_pass() ->
   Service = string:join(["service", service_id()], ":"),
-  case autocluster_httpc:get(autocluster_config:get(consul_scheme),
+  case autocluster_httpc:put(autocluster_config:get(consul_scheme),
                              autocluster_config:get(consul_host),
                              autocluster_config:get(consul_port),
                              [v1, agent, check, pass, Service],
-                             maybe_add_acl([])) of
+                             maybe_add_acl([]), "") of
     {ok, []} -> ok;
     {error, Reason} ->
       autocluster_log:error("Error updating Consul health check: ~p",
@@ -126,11 +126,11 @@ send_health_check_pass() ->
 -spec unregister() -> ok | {error, Reason :: string()}.
 unregister() ->
   Service = string:join(["service", service_id()], ":"),
-  case autocluster_httpc:get(autocluster_config:get(consul_scheme),
+  case autocluster_httpc:put(autocluster_config:get(consul_scheme),
                              autocluster_config:get(consul_host),
                              autocluster_config:get(consul_port),
                              [v1, agent, service, deregister, Service],
-                             maybe_add_acl([])) of
+                             maybe_add_acl([]), "") of
     {ok, _} -> ok;
     Error   -> Error
   end.
