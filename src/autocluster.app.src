@@ -1,7 +1,7 @@
 {application, autocluster,
   [
     {description, "RabbitMQ Automatic Clustering Plugin"},
-    {vsn, "0.6.1"},
+    {vsn, "0.6.2"},
     {env, []},
     {mod, {autocluster_app, []}},
     {modules, [
